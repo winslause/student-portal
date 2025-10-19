@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Class Timetable | Phantom College</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --secondary: #10b981;
+            --accent: #f59e0b;
+            --dark: #1e293b;
+            --light: #f8fafc;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        }
+        
+        .sidebar {
+            transition: all 0.3s ease;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .sidebar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb {
+            background: #c5c5c5;
+            border-radius: 3px;
+        }
+        
+        .card-hover {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .progress-bar {
+            height: 8px;
+            border-radius: 4px;
+            background-color: #e2e8f0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .notification-dot {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 12px;
+            height: 12px;
+            background-color: #ef4444;
+            border-radius: 50%;
+        }
+        
+        .sidebar-item.active {
+            background: linear-gradient(to right, #4f46e5, #7c3aed) !important;
+            color: white !important;
+            border-right: 3px solid #ffffff;
+        }
+        
+        .sidebar-item.active i,
+        .sidebar-item.active span {
+            color: white !important;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .tab-button.active {
+            background-color: #4f46e5;
+            color: white !important;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                position: fixed;
+                z-index: 20;
+                width: 280px;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 15;
+            }
+            
+            .overlay.active {
+                display: block;
+            }
+        }
+        
+        .timetable-cell {
+            min-height: 100px;
+            border: 1px solid #e5e7eb;
+            transition: all 0.2s ease;
+        }
+        
+        .timetable-cell:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .course-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            display: inline-block;
+            margin-bottom: 0.25rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Overlay for mobile -->
+    <div class="overlay"></div>
+    
+    <!-- Main Container -->
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="sidebar w-64 bg-white shadow-lg fixed h-full z-10">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-xl">P</span>
+                    </div>
+                    <h1 class="text-xl font-bold text-gray-800 ml-3">Phantom College</h1>
+                </div>
+            </div>
+            
+            <div class="p-4">
+                <div class="mb-8">
+                    <div class="flex items-center mb-6">
+                        <div class="w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                            AJ
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="font-semibold text-gray-800">Alex Johnson</h3>
+                            <p class="text-sm text-gray-500">BSc. Computer Science</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-4 border border-indigo-100">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-medium text-indigo-700">Current GPA</span>
+                            <span class="text-sm font-bold text-indigo-700">3.75</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill bg-gradient-to-r from-indigo-500 to-purple-500" style="width: 85%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <nav>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="index.html.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-home mr-3"></i>
+                                <span>Dashboard</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-courses.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-book mr-3"></i>
+                                <span>My Courses</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-timetable.html" class="sidebar-item flex items-center p-3 text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg active">
+                                <i class="fas fa-calendar-alt mr-3"></i>
+                                <span>Timetable</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-assignments.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-file-alt mr-3"></i>
+                                <span>Assignments</span>
+                                <span class="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-1">3</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-results.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-chart-bar mr-3"></i>
+                                <span>Results</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-finance.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-money-bill-wave mr-3"></i>
+                                <span>Finance</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-profile.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-user mr-3"></i>
+                                <span>My Profile</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-messages.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-comments mr-3"></i>
+                                <span>Messages</span>
+                                <span class="ml-auto bg-green-500 text-white text-xs rounded-full px-2 py-1">5</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-attendance.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-user-check mr-3"></i>
+                                <span>Attendance</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-profile.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-cog mr-3"></i>
+                                <span>Settings</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="flex-1 md:ml-64">
+            <!-- Header -->
+            <header class="bg-white shadow-sm py-4 px-6 flex justify-between items-center">
+                <div class="flex items-center">
+                    <button id="menu-toggle" class="md:hidden text-gray-500 focus:outline-none">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    <h2 class="text-xl font-semibold text-gray-800 ml-4">Class Timetable</h2>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <button class="text-gray-500 focus:outline-none">
+                            <i class="fas fa-bell text-xl"></i>
+                            <span class="notification-dot"></span>
+                        </button>
+                    </div>
+                    <div class="relative">
+                        <button class="flex items-center text-gray-700 focus:outline-none">
+                            <div class="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                                AJ
+                            </div>
+                            <span class="ml-2 hidden md:inline">Alex Johnson</span>
+                            <i class="fas fa-chevron-down ml-1 text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Timetable Content -->
+            <main class="p-6">
+                <!-- Header Section -->
+                <div class="mb-8">
+                    <h1 class="text-2xl font-bold text-gray-800">Class Schedule</h1>
+                    <p class="text-gray-600">Your weekly class timetable for Semester 2, 2025</p>
+                </div>
+                
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-gradient-to-br from-white to-blue-50 rounded-xl shadow-sm p-6 card-hover border border-blue-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-chalkboard-teacher text-blue-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Classes This Week</h3>
+                                <p class="text-2xl font-bold text-gray-800">12</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-white to-green-50 rounded-xl shadow-sm p-6 card-hover border border-green-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-clock text-green-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Weekly Hours</h3>
+                                <p class="text-2xl font-bold text-gray-800">18</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-white to-purple-50 rounded-xl shadow-sm p-6 card-hover border border-purple-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-book text-purple-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Active Courses</h3>
+                                <p class="text-2xl font-bold text-gray-800">6</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-white to-orange-50 rounded-xl shadow-sm p-6 card-hover border border-orange-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-user-friends text-orange-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Lecturers</h3>
+                                <p class="text-2xl font-bold text-gray-800">5</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Timetable Navigation -->
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 mb-6">
+                    <div class="border-b border-gray-200">
+                        <div class="flex overflow-x-auto">
+                            <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-indigo-600 whitespace-nowrap active" data-tab="weekly">
+                                Weekly View
+                            </button>
+                            <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-indigo-600 whitespace-nowrap" data-tab="daily">
+                                Daily View
+                            </button>
+                            <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-indigo-600 whitespace-nowrap" data-tab="exams">
+                                Exam Schedule
+                            </button>
+                            <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-indigo-600 whitespace-nowrap" data-tab="calendar">
+                                Calendar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tab Content -->
+                <div>
+                    <!-- Weekly Timetable -->
+                    <div class="tab-content active" id="weekly">
+                        <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between">
+                            <h3 class="text-lg font-semibold text-gray-800">Weekly Timetable</h3>
+                            <div class="mt-2 md:mt-0 flex items-center space-x-4">
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                                    <span class="text-xs text-gray-600">Lecture</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                                    <span class="text-xs text-gray-600">Lab</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
+                                    <span class="text-xs text-gray-600">Tutorial</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+                            <div class="overflow-x-auto">
+                                <table class="w-full">
+                                    <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                                        <tr>
+                                            <th class="px-4 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                                            <th class="px-4 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monday</th>
+                                            <th class="px-4 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tuesday</th>
+                                            <th class="px-4 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Wednesday</th>
+                                            <th class="px-4 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thursday</th>
+                                            <th class="px-4 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Friday</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-200">
+                                        <!-- 8:00 - 9:30 -->
+                                        <tr>
+                                            <td class="px-4 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">8:00 - 9:30</td>
+                                            <td class="px-4 py-4">
+                                                <!-- Empty -->
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <!-- Empty -->
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <!-- Empty -->
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <!-- Empty -->
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <!-- Empty -->
+                                            </td>
+                                        </tr>
+                                        
+                                        <!-- 9:00 - 10:30 -->
+                                        <tr>
+                                            <td class="px-4 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">9:00 - 10:30</td>
+                                            <td class="px-4 py-4">
+                                                <div class="timetable-cell bg-purple-50 p-3 rounded-lg border border-purple-200 relative">
+                                                    <span class="course-badge bg-purple-100 text-purple-800">CS403</span>
+                                                    <h4 class="text-sm font-medium text-gray-800">Software Engineering</h4>
+                                                    <p class="text-xs text-gray-600">Dr. Michael Brown</p>
+                                                    <p class="text-xs text-gray-500 mt-1">CS-105</p>
+                                                    <div class="absolute bottom-2 right-2">
+                                                        <i class="fas fa-chalkboard-teacher text-purple-500"></i>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <!-- Empty -->
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <div class="timetable-cell bg-purple-50 p-3 rounded-lg border border-purple-200 relative">
+                                                    <span class="course-badge bg-purple-100 text-purple-800">CS403</span>
+                                                    <h4 class="text-sm font-medium text-gray-800">Software Engineering</h4>
+                                                    <p class="text-xs text-gray-600">Dr. Michael Brown</p>
+                                                    <p class="text-xs text-gray-500 mt-1">CS-105</p>
+                                                    <div class="absolute bottom-2 right-2">
+                                                        <i class="fas fa-chalkboard-teacher text-purple-500"></i>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <!-- Empty -->
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <div class="timetable-cell bg-purple-50 p-3 rounded-lg border border-purple-200 relative">
+                                                    <span class="course-badge bg-purple-100 text-purple-800">CS403</span>
+                                                    <h4 class="text-sm font-medium text-gray-800">Software Engineering</h4>
+                                                    <p class="text-xs text-gray-600">Dr. Michael Brown</p>
+                                                    <p class="text-xs text-gray-500 mt-1">CS-105</p>
+                                                    <div class="absolute bottom-2 right-2">
+                                                        <i class="fas fa-chalkboard-teacher text-purple-500"></i>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        
+                                        <!-- 10:00 - 11:30 -->
+                                        <tr>
+                                            <td class="px-4 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">10:00 - 11:30</td>
+                                            <td class="px-4 py-4">
+                                                <div class="timetable-cell bg-blue-50 p-3 rounded-lg border border-blue-200 relative">
+                                                    <span class="course-badge bg-blue-100 text-blue-800">CS401</span>
+                                                    <h4 class="text-sm font-medium text-gray-800">Web Development</h4>
+                                                    <p class="text-xs text-gray-600">Dr. Sarah Smith</p>
+                                                    <p class="text-xs text-gray-500 mt-1">CS-102</p>
+                                                    <div class="absolute bottom-2 right-2">
+                                                        <i class="fas fa-laptop-code text-blue-500"></i>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <!-- Empty -->
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <div class="timetable-cell bg-blue-50 p-3 rounded-lg border border-blue-200 relative">
+                                                    <span class="course-badge bg-blue-100 text-blue-800">CS401</span>
+                                                    <h4 class="text-sm font-medium text-gray-800">Web Development</h4>
+                                                    <p class="text-xs text-gray-600">Dr. Sarah Smith</p>
+                                                    <p class="text-xs text-gray-500 mt-1">CS-102</p>
+                                                    <div class="absolute bottom-2 right-2">
+                                                        <i class="fas fa-laptop-code text-blue-500"></i>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <!-- Empty -->
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <!-- Empty -->
+                                            </td>
+                                        </tr>
+                                        
+                                        <!-- 14:00 - 15:30 -->
+                                        <tr>
+                                            <td class="px-4 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">14:00 - 15:30</td>
+                                            <td class="px-4 py-4">
+                                                <!-- Empty -->
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <div class="timetable-cell bg-green-50 p-3 rounded-lg border border-green-200 relative">
+                                                    <span class="course-badge bg-green-100 text-green-800">CS402</span>
+                                                    <h4 class="text-sm font-medium text-gray-800">Database Systems</h4>
+                                                    <p class="text-xs text-gray-600">Prof. James Johnson</p>
+                                                    <p class="text-xs text-gray-500 mt-1">CS-201</p>
+                                                    <div class="absolute bottom-2 right-2">
+                                                        <i class="fas fa-database text-green-500"></i>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <!-- Empty -->
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <div class="timetable-cell bg-green-50 p-3 rounded-lg border border-green-200 relative">
+                                                    <span class="course-badge bg-green-100 text-green-800">CS402</span>
+                                                    <h4 class="text-sm font-medium text-gray-800">Database Systems</h4>
+                                                    <p class="text-xs text-gray-600">Prof. James Johnson</p>
+                                                    <p class="text-xs text-gray-500 mt-1">CS-201</p>
+                                                    <div class="absolute bottom-2 right-2">
+                                                        <i class="fas fa-database text-green-500"></i>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <!-- Empty -->
+                                            </td>
+                                        </tr>
+                                        
+                                        <!-- 16:00 - 17:30 -->
+                                        <tr>
+                                            <td class="px-4 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">16:00 - 17:30</td>
+                                            <td class="px-4 py-4">
+                                                <div class="timetable-cell bg-blue-50 p-3 rounded-lg border border-blue-200 relative">
+                                                    <span class="course-badge bg-blue-100 text-blue-800">CS401</span>
+                                                    <h4 class="text-sm font-medium text-gray-800">Web Dev Lab</h4>
+                                                    <p class="text-xs text-gray-600">Dr. Sarah Smith</p>
+                                                    <p class="text-xs text-gray-500 mt-1">Lab-3</p>
+                                                    <div class="absolute bottom-2 right-2">
+                                                        <i class="fas fa-flask text-blue-500"></i>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <!-- Empty -->
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <!-- Empty -->
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <div class="timetable-cell bg-green-50 p-3 rounded-lg border border-green-200 relative">
+                                                    <span class="course-badge bg-green-100 text-green-800">CS402</span>
+                                                    <h4 class="text-sm font-medium text-gray-800">Database Lab</h4>
+                                                    <p class="text-xs text-gray-600">Prof. James Johnson</p>
+                                                    <p class="text-xs text-gray-500 mt-1">Lab-2</p>
+                                                    <div class="absolute bottom-2 right-2">
+                                                        <i class="fas fa-flask text-green-500"></i>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <!-- Empty -->
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- Today's Classes -->
+                        <div class="mt-8">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Today's Classes</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-sm font-medium text-blue-700 bg-blue-100 px-2 py-1 rounded">CS401</span>
+                                        <span class="text-xs text-gray-500">10:00 - 11:30</span>
+                                    </div>
+                                    <h4 class="font-medium text-gray-800">Web Development</h4>
+                                    <p class="text-sm text-gray-600">Dr. Sarah Smith</p>
+                                    <div class="flex items-center mt-2 text-xs text-gray-500">
+                                        <i class="fas fa-map-marker-alt mr-1"></i>
+                                        <span>CS-102</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-sm font-medium text-green-700 bg-green-100 px-2 py-1 rounded">CS402</span>
+                                        <span class="text-xs text-gray-500">14:00 - 15:30</span>
+                                    </div>
+                                    <h4 class="font-medium text-gray-800">Database Systems</h4>
+                                    <p class="text-sm text-gray-600">Prof. James Johnson</p>
+                                    <div class="flex items-center mt-2 text-xs text-gray-500">
+                                        <i class="fas fa-map-marker-alt mr-1"></i>
+                                        <span>CS-201</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-sm font-medium text-blue-700 bg-blue-100 px-2 py-1 rounded">CS401</span>
+                                        <span class="text-xs text-gray-500">16:00 - 17:30</span>
+                                    </div>
+                                    <h4 class="font-medium text-gray-800">Web Dev Lab</h4>
+                                    <p class="text-sm text-gray-600">Dr. Sarah Smith</p>
+                                    <div class="flex items-center mt-2 text-xs text-gray-500">
+                                        <i class="fas fa-map-marker-alt mr-1"></i>
+                                        <span>Lab-3</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Daily View -->
+                    <div class="tab-content" id="daily">
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800">Daily Schedule</h3>
+                            <p class="text-gray-600">View your classes for a specific day</p>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                            <p class="text-gray-600 text-center py-8">Daily view content will be displayed here with a detailed breakdown of classes for selected day.</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Exam Schedule -->
+                    <div class="tab-content" id="exams">
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800">Exam Schedule</h3>
+                            <p class="text-gray-600">Your upcoming examinations for Semester 2, 2025</p>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                            <p class="text-gray-600 text-center py-8">Exam schedule will be displayed here with dates, times, and venues for all examinations.</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Calendar View -->
+                    <div class="tab-content" id="calendar">
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800">Calendar View</h3>
+                            <p class="text-gray-600">Monthly calendar with your class schedule</p>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                            <p class="text-gray-600 text-center py-8">Interactive calendar will be displayed here with all your classes and important dates.</p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Mobile menu toggle
+        $('#menu-toggle').click(function() {
+            $('.sidebar').toggleClass('active');
+            $('.overlay').toggleClass('active');
+        });
+        
+        // Close sidebar when clicking overlay
+        $('.overlay').click(function() {
+            $('.sidebar').removeClass('active');
+            $('.overlay').removeClass('active');
+        });
+        
+        // Tab functionality
+        $('.tab-button').click(function() {
+            // Remove active class from all tabs
+            $('.tab-button').removeClass('active');
+            
+            // Add active class to clicked tab
+            $(this).addClass('active');
+            
+            // Hide all tab content
+            $('.tab-content').removeClass('active');
+            
+            // Show the selected tab content
+            const tabId = $(this).data('tab');
+            $('#' + tabId).addClass('active');
+        });
+        
+        // Simulate loading data
+        $(document).ready(function() {
+            console.log("Timetable page loaded successfully");
+            
+            // Simulate notification count update
+            setTimeout(function() {
+                $('.notification-dot').css('background-color', '#ef4444');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Records | Phantom College</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --secondary: #10b981;
+            --accent: #f59e0b;
+            --dark: #1e293b;
+            --light: #f8fafc;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        }
+        
+        .sidebar {
+            transition: all 0.3s ease;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .sidebar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb {
+            background: #c5c5c5;
+            border-radius: 3px;
+        }
+        
+        .card-hover {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .progress-bar {
+            height: 8px;
+            border-radius: 4px;
+            background-color: #e2e8f0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .notification-dot {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 12px;
+            height: 12px;
+            background-color: #ef4444;
+            border-radius: 50%;
+        }
+        
+        .sidebar-item.active {
+            background: linear-gradient(to right, #4f46e5, #7c3aed);
+            color: white;
+            border-right: 3px solid white;
+        }
+        
+        .sidebar-item.active i, 
+        .sidebar-item.active span {
+            color: white !important;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .tab-button.active {
+            background-color: #4f46e5;
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                position: fixed;
+                z-index: 20;
+                width: 280px;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 15;
+            }
+            
+            .overlay.active {
+                display: block;
+            }
+        }
+        
+        .attendance-present {
+            background-color: #10b981;
+            color: white;
+        }
+        
+        .attendance-absent {
+            background-color: #ef4444;
+            color: white;
+        }
+        
+        .attendance-late {
+            background-color: #f59e0b;
+            color: white;
+        }
+        
+        .attendance-excused {
+            background-color: #6b7280;
+            color: white;
+        }
+        
+        .status-badge {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-weight: 500;
+        }
+        
+        .attendance-card {
+            transition: all 0.3s ease;
+        }
+        
+        .attendance-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .calendar-day {
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        .calendar-day.present {
+            background-color: #10b981;
+            color: white;
+        }
+        
+        .calendar-day.absent {
+            background-color: #ef4444;
+            color: white;
+        }
+        
+        .calendar-day.late {
+            background-color: #f59e0b;
+            color: white;
+        }
+        
+        .calendar-day.excused {
+            background-color: #6b7280;
+            color: white;
+        }
+        
+        .calendar-day.today {
+            border: 2px solid #4f46e5;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Overlay for mobile -->
+    <div class="overlay"></div>
+    
+    <!-- Main Container -->
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="sidebar w-64 bg-white shadow-lg fixed h-full z-10">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-xl">P</span>
+                    </div>
+                    <h1 class="text-xl font-bold text-gray-800 ml-3">Phantom College</h1>
+                </div>
+            </div>
+            
+            <div class="p-4">
+                <div class="mb-8">
+                    <div class="flex items-center mb-6">
+                        <div class="w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                            AJ
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="font-semibold text-gray-800">Alex Johnson</h3>
+                            <p class="text-sm text-gray-500">BSc. Computer Science</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-4 border border-indigo-100">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-medium text-indigo-700">Current GPA</span>
+                            <span class="text-sm font-bold text-indigo-700">3.75</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill bg-gradient-to-r from-indigo-500 to-purple-500" style="width: 85%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <nav>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="index.html.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-home mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">Dashboard</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-courses.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-book mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">My Courses</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-timetable.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-calendar-alt mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">Timetable</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-assignments.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-file-alt mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">Assignments</span>
+                                <span class="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-1">3</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-results.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-chart-bar mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">Results</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-finance.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-money-bill-wave mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">Finance</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-profile.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-user mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">My Profile</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-messages.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-comments mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">Messages</span>
+                                <span class="ml-auto bg-green-500 text-white text-xs rounded-full px-2 py-1">5</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-attendance.html" class="sidebar-item flex items-center p-3 text-white rounded-lg active">
+                                <i class="fas fa-user-check mr-3 text-white"></i>
+                                <span class="text-white">Attendance</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-profile.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-cog mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">Settings</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="flex-1 md:ml-64">
+            <!-- Header -->
+            <header class="bg-white shadow-sm py-4 px-6 flex justify-between items-center">
+                <div class="flex items-center">
+                    <button id="menu-toggle" class="md:hidden text-gray-500 focus:outline-none">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    <h2 class="text-xl font-semibold text-gray-800 ml-4">Attendance Records</h2>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <button class="text-gray-500 focus:outline-none">
+                            <i class="fas fa-bell text-xl"></i>
+                            <span class="notification-dot"></span>
+                        </button>
+                    </div>
+                    <div class="relative">
+                        <button class="flex items-center text-gray-700 focus:outline-none">
+                            <div class="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                                AJ
+                            </div>
+                            <span class="ml-2 hidden md:inline">Alex Johnson</span>
+                            <i class="fas fa-chevron-down ml-1 text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Attendance Content -->
+            <main class="p-6">
+                <!-- Header Section -->
+                <div class="mb-8">
+                    <h1 class="text-2xl font-bold text-gray-800">Attendance Tracking</h1>
+                    <p class="text-gray-600">Monitor your class attendance and track your participation</p>
+                </div>
+                
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-gradient-to-br from-white to-green-50 rounded-xl shadow-sm p-6 card-hover border border-green-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-user-check text-green-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Overall Attendance</h3>
+                                <p class="text-2xl font-bold text-gray-800">92%</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-white to-blue-50 rounded-xl shadow-sm p-6 card-hover border border-blue-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-calendar-check text-blue-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Classes Attended</h3>
+                                <p class="text-2xl font-bold text-gray-800">46</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-white to-red-50 rounded-xl shadow-sm p-6 card-hover border border-red-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-user-times text-red-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Classes Missed</h3>
+                                <p class="text-2xl font-bold text-gray-800">4</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-white to-orange-50 rounded-xl shadow-sm p-6 card-hover border border-orange-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-clock text-orange-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Late Arrivals</h3>
+                                <p class="text-2xl font-bold text-gray-800">2</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tabs Navigation -->
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 mb-6">
+                    <div class="border-b border-gray-200">
+                        <div class="flex overflow-x-auto">
+                            <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-indigo-600 whitespace-nowrap active" data-tab="overview">
+                                Overview
+                            </button>
+                            <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-indigo-600 whitespace-nowrap" data-tab="courses">
+                                By Course
+                            </button>
+                            <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-indigo-600 whitespace-nowrap" data-tab="calendar">
+                                Calendar View
+                            </button>
+                            <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-indigo-600 whitespace-nowrap" data-tab="request">
+                                Request Leave
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tab Content -->
+                <div>
+                    <!-- Overview -->
+                    <div class="tab-content active" id="overview">
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800">Attendance Overview - Semester 2, 2025</h3>
+                            <p class="text-gray-600">Your overall attendance performance across all courses</p>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                            <!-- Overall Stats -->
+                            <div class="lg:col-span-2 bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                                <h4 class="text-lg font-semibold text-gray-800 mb-4">Attendance Summary</h4>
+                                <div class="space-y-6">
+                                    <div>
+                                        <div class="flex justify-between mb-2">
+                                            <span class="text-sm font-medium text-gray-700">Overall Attendance Rate</span>
+                                            <span class="text-sm font-bold text-gray-700">92%</span>
+                                        </div>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill bg-gradient-to-r from-green-500 to-teal-500" style="width: 92%"></div>
+                                        </div>
+                                        <p class="text-xs text-gray-500 mt-1">46 attended out of 50 total classes</p>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                                            <div class="flex items-center">
+                                                <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                                                    <i class="fas fa-check text-green-600"></i>
+                                                </div>
+                                                <div class="ml-3">
+                                                    <p class="text-sm font-medium text-green-800">Present</p>
+                                                    <p class="text-lg font-bold text-green-900">46</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="bg-red-50 p-4 rounded-lg border border-red-200">
+                                            <div class="flex items-center">
+                                                <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                                                    <i class="fas fa-times text-red-600"></i>
+                                                </div>
+                                                <div class="ml-3">
+                                                    <p class="text-sm font-medium text-red-800">Absent</p>
+                                                    <p class="text-lg font-bold text-red-900">4</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                                            <div class="flex items-center">
+                                                <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                                                    <i class="fas fa-clock text-orange-600"></i>
+                                                </div>
+                                                <div class="ml-3">
+                                                    <p class="text-sm font-medium text-orange-800">Late</p>
+                                                    <p class="text-lg font-bold text-orange-900">2</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                            <div class="flex items-center">
+                                                <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                                                    <i class="fas fa-file-medical text-gray-600"></i>
+                                                </div>
+                                                <div class="ml-3">
+                                                    <p class="text-sm font-medium text-gray-800">Excused</p>
+                                                    <p class="text-lg font-bold text-gray-900">1</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Recent Attendance -->
+                            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                                <h4 class="text-lg font-semibold text-gray-800 mb-4">Recent Attendance</h4>
+                                <div class="space-y-4">
+                                    <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                                        <div>
+                                            <p class="text-sm font-medium text-green-800">Web Development</p>
+                                            <p class="text-xs text-green-700">Mon, 16 Oct • 10:00 AM</p>
+                                        </div>
+                                        <span class="status-badge attendance-present">Present</span>
+                                    </div>
+                                    
+                                    <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                                        <div>
+                                            <p class="text-sm font-medium text-green-800">Database Systems</p>
+                                            <p class="text-xs text-green-700">Tue, 17 Oct • 2:00 PM</p>
+                                        </div>
+                                        <span class="status-badge attendance-present">Present</span>
+                                    </div>
+                                    
+                                    <div class="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-200">
+                                        <div>
+                                            <p class="text-sm font-medium text-orange-800">Software Engineering</p>
+                                            <p class="text-xs text-orange-700">Wed, 18 Oct • 9:00 AM</p>
+                                        </div>
+                                        <span class="status-badge attendance-late">Late</span>
+                                    </div>
+                                    
+                                    <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                                        <div>
+                                            <p class="text-sm font-medium text-green-800">Web Development</p>
+                                            <p class="text-xs text-green-700">Wed, 18 Oct • 10:00 AM</p>
+                                        </div>
+                                        <span class="status-badge attendance-present">Present</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Attendance Alerts -->
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                            <div class="flex">
+                                <i class="fas fa-exclamation-triangle text-yellow-600 mt-1 mr-3"></i>
+                                <div>
+                                    <h4 class="text-sm font-medium text-yellow-800">Attendance Notice</h4>
+                                    <p class="text-sm text-yellow-700 mt-1">Your attendance is currently at 92%. The minimum required attendance to sit for exams is 75%. Keep up the good work!</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Recent Attendance Records -->
+                        <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+                            <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+                                <h4 class="text-lg font-semibold text-gray-800">Recent Attendance Records</h4>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lecturer</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remarks</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-200">
+                                        <tr class="attendance-card">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">18 Oct 2025</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Web Development</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">10:00 - 11:30</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">Dr. Sarah Smith</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="status-badge attendance-present">Present</span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">-</td>
+                                        </tr>
+                                        <tr class="attendance-card">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">18 Oct 2025</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Software Engineering</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">09:00 - 10:30</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">Dr. Michael Brown</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="status-badge attendance-late">Late (15 min)</span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">Traffic delay</td>
+                                        </tr>
+                                        <tr class="attendance-card">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">17 Oct 2025</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Database Systems</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">14:00 - 15:30</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">Prof. James Johnson</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="status-badge attendance-present">Present</span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">-</td>
+                                        </tr>
+                                        <tr class="attendance-card">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">16 Oct 2025</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Web Development</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">10:00 - 11:30</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">Dr. Sarah Smith</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="status-badge attendance-present">Present</span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">-</td>
+                                        </tr>
+                                        <tr class="attendance-card">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">13 Oct 2025</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Software Engineering</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">09:00 - 10:30</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">Dr. Michael Brown</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="status-badge attendance-absent">Absent</span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">Medical appointment</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- By Course -->
+                    <div class="tab-content" id="courses">
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800">Attendance by Course</h3>
+                            <p class="text-gray-600">Detailed attendance breakdown for each course</p>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <!-- Course 1 -->
+                            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                                <div class="flex items-start justify-between mb-4">
+                                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-laptop-code text-blue-600 text-xl"></i>
+                                    </div>
+                                    <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">CS401</span>
+                                </div>
+                                <h4 class="text-lg font-bold text-gray-800 mb-2">Web Development</h4>
+                                <p class="text-gray-600 text-sm mb-4">Dr. Sarah Smith</p>
+                                
+                                <div class="mb-4">
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-sm font-medium text-gray-700">Attendance Rate</span>
+                                        <span class="text-sm font-bold text-gray-700">95%</span>
+                                    </div>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill bg-gradient-to-r from-green-500 to-teal-500" style="width: 95%"></div>
+                                    </div>
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                                    <div class="flex items-center">
+                                        <div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                                        <span>Present: 19/20</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
+                                        <span>Absent: 1/20</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="w-2 h-2 bg-orange-500 rounded-full mr-2"></div>
+                                        <span>Late: 0/20</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="w-2 h-2 bg-gray-500 rounded-full mr-2"></div>
+                                        <span>Excused: 0/20</span>
+                                    </div>
+                                </div>
+                                
+                                <button class="w-full mt-4 py-2 bg-indigo-600 text-white text-sm rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                                    View Details
+                                </button>
+                            </div>
+                            
+                            <!-- Course 2 -->
+                            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                                <div class="flex items-start justify-between mb-4">
+                                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-database text-green-600 text-xl"></i>
+                                    </div>
+                                    <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">CS402</span>
+                                </div>
+                                <h4 class="text-lg font-bold text-gray-800 mb-2">Database Systems</h4>
+                                <p class="text-gray-600 text-sm mb-4">Prof. James Johnson</p>
+                                
+                                <div class="mb-4">
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-sm font-medium text-gray-700">Attendance Rate</span>
+                                        <span class="text-sm font-bold text-gray-700">90%</span>
+                                    </div>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill bg-gradient-to-r from-green-500 to-teal-500" style="width: 90%"></div>
+                                    </div>
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                                    <div class="flex items-center">
+                                        <div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                                        <span>Present: 18/20</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
+                                        <span>Absent: 2/20</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="w-2 h-2 bg-orange-500 rounded-full mr-2"></div>
+                                        <span>Late: 1/20</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="w-2 h-2 bg-gray-500 rounded-full mr-2"></div>
+                                        <span>Excused: 0/20</span>
+                                    </div>
+                                </div>
+                                
+                                <button class="w-full mt-4 py-2 bg-indigo-600 text-white text-sm rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                                    View Details
+                                </button>
+                            </div>
+                            
+                            <!-- Course 3 -->
+                            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                                <div class="flex items-start justify-between mb-4">
+                                    <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-project-diagram text-purple-600 text-xl"></i>
+                                    </div>
+                                    <span class="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-0.5 rounded">CS403</span>
+                                </div>
+                                <h4 class="text-lg font-bold text-gray-800 mb-2">Software Engineering</h4>
+                                <p class="text-gray-600 text-sm mb-4">Dr. Michael Brown</p>
+                                
+                                <div class="mb-4">
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-sm font-medium text-gray-700">Attendance Rate</span>
+                                        <span class="text-sm font-bold text-gray-700">85%</span>
+                                    </div>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill bg-gradient-to-r from-green-500 to-teal-500" style="width: 85%"></div>
+                                    </div>
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                                    <div class="flex items-center">
+                                        <div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                                        <span>Present: 17/20</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
+                                        <span>Absent: 2/20</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="w-2 h-2 bg-orange-500 rounded-full mr-2"></div>
+                                        <span>Late: 1/20</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="w-2 h-2 bg-gray-500 rounded-full mr-2"></div>
+                                        <span>Excused: 1/20</span>
+                                    </div>
+                                </div>
+                                
+                                <button class="w-full mt-4 py-2 bg-indigo-600 text-white text-sm rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                                    View Details
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Calendar View -->
+                    <div class="tab-content" id="calendar">
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800">Attendance Calendar</h3>
+                            <p class="text-gray-600">Monthly view of your class attendance</p>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                            <div class="text-center py-12">
+                                <i class="fas fa-calendar-alt text-gray-400 text-4xl mb-4"></i>
+                                <h4 class="text-lg font-medium text-gray-700">Attendance Calendar</h4>
+                                <p class="text-gray-500 mt-2">Interactive calendar showing your daily attendance status would be displayed here</p>
+                                
+                                <div class="mt-6 flex justify-center space-x-4">
+                                    <div class="flex items-center">
+                                        <div class="calendar-day present"></div>
+                                        <span class="ml-2 text-sm text-gray-600">Present</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="calendar-day absent"></div>
+                                        <span class="ml-2 text-sm text-gray-600">Absent</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="calendar-day late"></div>
+                                        <span class="ml-2 text-sm text-gray-600">Late</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="calendar-day excused"></div>
+                                        <span class="ml-2 text-sm text-gray-600">Excused</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Request Leave -->
+                    <div class="tab-content" id="request">
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800">Request Leave of Absence</h3>
+                            <p class="text-gray-600">Submit a formal request for excused absence</p>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                            <div class="max-w-2xl mx-auto">
+                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                                    <div class="flex">
+                                        <i class="fas fa-info-circle text-blue-600 mt-1 mr-3"></i>
+                                        <div>
+                                            <h4 class="text-sm font-medium text-blue-800">Leave Request Guidelines</h4>
+                                            <p class="text-sm text-blue-700 mt-1">Submit leave requests at least 48 hours in advance for approval. Medical emergencies require supporting documentation.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <form class="space-y-6">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Leave Type</label>
+                                        <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                            <option selected>Medical Leave</option>
+                                            <option>Family Emergency</option>
+                                            <option>Personal Reasons</option>
+                                            <option>Academic Conference</option>
+                                            <option>Other</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                                            <input type="date" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                                            <input type="date" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Courses Affected</label>
+                                        <div class="space-y-2">
+                                            <div class="flex items-center">
+                                                <input type="checkbox" id="course1" class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" checked>
+                                                <label for="course1" class="ml-2 block text-sm text-gray-700">CS401 - Web Development</label>
+                                            </div>
+                                            <div class="flex items-center">
+                                                <input type="checkbox" id="course2" class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" checked>
+                                                <label for="course2" class="ml-2 block text-sm text-gray-700">CS402 - Database Systems</label>
+                                            </div>
+                                            <div class="flex items-center">
+                                                <input type="checkbox" id="course3" class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" checked>
+                                                <label for="course3" class="ml-2 block text-sm text-gray-700">CS403 - Software Engineering</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Reason for Leave</label>
+                                        <textarea rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Please provide details for your leave request..."></textarea>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Supporting Documents (Optional)</label>
+                                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                                            <i class="fas fa-cloud-upload-alt text-gray-400 text-2xl mb-2"></i>
+                                            <p class="text-sm text-gray-500">Drag and drop files here or</p>
+                                            <button type="button" class="mt-2 px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 transition-colors">
+                                                Browse Files
+                                            </button>
+                                            <p class="text-xs text-gray-400 mt-2">Maximum file size: 10MB (PDF, JPG, PNG)</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex justify-end pt-4">
+                                        <button type="button" class="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 transition-colors mr-3">
+                                            Cancel
+                                        </button>
+                                        <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                                            Submit Request
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Mobile menu toggle
+        $('#menu-toggle').click(function() {
+            $('.sidebar').toggleClass('active');
+            $('.overlay').toggleClass('active');
+        });
+        
+        // Close sidebar when clicking overlay
+        $('.overlay').click(function() {
+            $('.sidebar').removeClass('active');
+            $('.overlay').removeClass('active');
+        });
+        
+        // Tab functionality
+        $('.tab-button').click(function() {
+            // Remove active class from all tabs
+            $('.tab-button').removeClass('active');
+            
+            // Add active class to clicked tab
+            $(this).addClass('active');
+            
+            // Hide all tab content
+            $('.tab-content').removeClass('active');
+            
+            // Show the selected tab content
+            const tabId = $(this).data('tab');
+            $('#' + tabId).addClass('active');
+        });
+        
+        // View details simulation
+        $('button:contains("View Details")').click(function(e) {
+            e.preventDefault();
+            const courseName = $(this).closest('.bg-white').find('h4').text();
+            alert(`Showing detailed attendance for ${courseName}`);
+        });
+        
+        // Leave request simulation
+        $('form').submit(function(e) {
+            e.preventDefault();
+            alert('Leave request submitted successfully! You will receive a confirmation email shortly.');
+        });
+        
+        // Simulate loading data
+        $(document).ready(function() {
+            console.log("Attendance page loaded successfully");
+            
+            // Simulate notification count update
+            setTimeout(function() {
+                $('.notification-dot').css('background-color', '#ef4444');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

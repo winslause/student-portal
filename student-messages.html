@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messages | Phantom College</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --secondary: #10b981;
+            --accent: #f59e0b;
+            --dark: #1e293b;
+            --light: #f8fafc;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        }
+        
+        .sidebar {
+            transition: all 0.3s ease;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .sidebar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb {
+            background: #c5c5c5;
+            border-radius: 3px;
+        }
+        
+        .card-hover {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .progress-bar {
+            height: 8px;
+            border-radius: 4px;
+            background-color: #e2e8f0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .notification-dot {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 12px;
+            height: 12px;
+            background-color: #ef4444;
+            border-radius: 50%;
+        }
+        
+        .sidebar-item.active {
+            background: linear-gradient(to right, #4f46e5, #7c3aed);
+            color: white;
+            border-right: 3px solid white;
+        }
+        
+        .sidebar-item.active i, 
+        .sidebar-item.active span {
+            color: white !important;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .tab-button.active {
+            background-color: #4f46e5;
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                position: fixed;
+                z-index: 20;
+                width: 280px;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 15;
+            }
+            
+            .overlay.active {
+                display: block;
+            }
+        }
+        
+        .message-unread {
+            background-color: #eff6ff;
+            border-left: 4px solid #4f46e5;
+        }
+        
+        .message-important {
+            background-color: #fef3c7;
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .conversation-active {
+            background-color: #e0e7ff;
+        }
+        
+        .message-card {
+            transition: all 0.3s ease;
+        }
+        
+        .message-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.1);
+        }
+        
+        .chat-container {
+            height: 500px;
+            overflow-y: auto;
+        }
+        
+        .message-sent {
+            background-color: #4f46e5;
+            color: white;
+            border-radius: 18px 18px 4px 18px;
+            margin-left: auto;
+        }
+        
+        .message-received {
+            background-color: #f3f4f6;
+            color: #374151;
+            border-radius: 18px 18px 18px 4px;
+            margin-right: auto;
+        }
+        
+        .typing-indicator {
+            display: inline-flex;
+            align-items: center;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #9ca3af;
+            border-radius: 50%;
+            margin: 0 2px;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+        
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+        
+        .online-indicator {
+            width: 10px;
+            height: 10px;
+            background-color: #10b981;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Overlay for mobile -->
+    <div class="overlay"></div>
+    
+    <!-- Main Container -->
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="sidebar w-64 bg-white shadow-lg fixed h-full z-10">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-xl">P</span>
+                    </div>
+                    <h1 class="text-xl font-bold text-gray-800 ml-3">Phantom College</h1>
+                </div>
+            </div>
+            
+            <div class="p-4">
+                <div class="mb-8">
+                    <div class="flex items-center mb-6">
+                        <div class="w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                            AJ
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="font-semibold text-gray-800">Alex Johnson</h3>
+                            <p class="text-sm text-gray-500">BSc. Computer Science</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-4 border border-indigo-100">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-medium text-indigo-700">Current GPA</span>
+                            <span class="text-sm font-bold text-indigo-700">3.75</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill bg-gradient-to-r from-indigo-500 to-purple-500" style="width: 85%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <nav>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="index.html.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-home mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">Dashboard</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-courses.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-book mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">My Courses</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-timetable.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-calendar-alt mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">Timetable</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-assignments.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-file-alt mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">Assignments</span>
+                                <span class="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-1">3</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-results.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-chart-bar mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">Results</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-finance.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-money-bill-wave mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">Finance</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-profile.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-user mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">My Profile</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-messages.html" class="sidebar-item flex items-center p-3 text-white rounded-lg active">
+                                <i class="fas fa-comments mr-3 text-white"></i>
+                                <span class="text-white">Messages</span>
+                                <span class="ml-auto bg-green-500 text-white text-xs rounded-full px-2 py-1">5</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-attendance.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-user-check mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">Attendance</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-profile.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-cog mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">Settings</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="flex-1 md:ml-64">
+            <!-- Header -->
+            <header class="bg-white shadow-sm py-4 px-6 flex justify-between items-center">
+                <div class="flex items-center">
+                    <button id="menu-toggle" class="md:hidden text-gray-500 focus:outline-none">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    <h2 class="text-xl font-semibold text-gray-800 ml-4">Messages & Communication</h2>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <button class="text-gray-500 focus:outline-none">
+                            <i class="fas fa-bell text-xl"></i>
+                            <span class="notification-dot"></span>
+                        </button>
+                    </div>
+                    <div class="relative">
+                        <button class="flex items-center text-gray-700 focus:outline-none">
+                            <div class="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                                AJ
+                            </div>
+                            <span class="ml-2 hidden md:inline">Alex Johnson</span>
+                            <i class="fas fa-chevron-down ml-1 text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Messages Content -->
+            <main class="p-6">
+                <!-- Header Section -->
+                <div class="mb-8">
+                    <h1 class="text-2xl font-bold text-gray-800">Communication Center</h1>
+                    <p class="text-gray-600">Connect with lecturers, classmates, and College staff</p>
+                </div>
+                
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-gradient-to-br from-white to-blue-50 rounded-xl shadow-sm p-6 card-hover border border-blue-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-envelope text-blue-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Unread Messages</h3>
+                                <p class="text-2xl font-bold text-gray-800">5</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-white to-green-50 rounded-xl shadow-sm p-6 card-hover border border-green-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-user-friends text-green-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Active Conversations</h3>
+                                <p class="text-2xl font-bold text-gray-800">8</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-white to-purple-50 rounded-xl shadow-sm p-6 card-hover border border-purple-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-chalkboard-teacher text-purple-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Lecturer Contacts</h3>
+                                <p class="text-2xl font-bold text-gray-800">6</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-white to-orange-50 rounded-xl shadow-sm p-6 card-hover border border-orange-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-comment-medical text-orange-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Support Tickets</h3>
+                                <p class="text-2xl font-bold text-gray-800">2</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tabs Navigation -->
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 mb-6">
+                    <div class="border-b border-gray-200">
+                        <div class="flex overflow-x-auto">
+                            <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-indigo-600 whitespace-nowrap active" data-tab="inbox">
+                                Inbox
+                            </button>
+                            <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-indigo-600 whitespace-nowrap" data-tab="chats">
+                                Chats
+                            </button>
+                            <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-indigo-600 whitespace-nowrap" data-tab="contacts">
+                                Contacts
+                            </button>
+                            <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-indigo-600 whitespace-nowrap" data-tab="support">
+                                Support
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tab Content -->
+                <div>
+                    <!-- Inbox -->
+                    <div class="tab-content active" id="inbox">
+                        <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between">
+                            <h3 class="text-lg font-semibold text-gray-800">Message Inbox</h3>
+                            <div class="mt-2 md:mt-0 flex space-x-2">
+                                <button class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                                    <i class="fas fa-plus mr-2"></i> New Message
+                                </button>
+                                <button class="px-4 py-2 bg-gray-200 text-gray-800 text-sm rounded-lg font-medium hover:bg-gray-300 transition-colors">
+                                    <i class="fas fa-filter mr-2"></i> Filter
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <!-- Message List -->
+                            <div class="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                                <div class="p-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+                                    <div class="relative">
+                                        <input type="text" placeholder="Search messages..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                                    </div>
+                                </div>
+                                
+                                <div class="overflow-y-auto" style="max-height: 600px;">
+                                    <!-- Message 1 -->
+                                    <div class="message-card p-4 border-b border-gray-200 message-unread cursor-pointer">
+                                        <div class="flex items-start space-x-3">
+                                            <div class="relative">
+                                                <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                                                    <i class="fas fa-chalkboard-teacher text-indigo-600"></i>
+                                                </div>
+                                                <div class="online-indicator absolute -bottom-1 -right-1"></div>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <div class="flex items-center justify-between">
+                                                    <h4 class="text-sm font-semibold text-gray-900 truncate">Dr. Sarah Smith</h4>
+                                                    <span class="text-xs text-gray-500">2 hours ago</span>
+                                                </div>
+                                                <p class="text-sm text-gray-600 truncate">Web Development project feedback and suggestions for improvement</p>
+                                                <div class="flex items-center mt-1">
+                                                    <span class="inline-block w-2 h-2 bg-indigo-600 rounded-full mr-2"></span>
+                                                    <span class="text-xs text-indigo-600 font-medium">Web Development</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Message 2 -->
+                                    <div class="message-card p-4 border-b border-gray-200 message-important cursor-pointer">
+                                        <div class="flex items-start space-x-3">
+                                            <div class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                                                <i class="fas fa-exclamation-circle text-orange-600"></i>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <div class="flex items-center justify-between">
+                                                    <h4 class="text-sm font-semibold text-gray-900 truncate">College Administration</h4>
+                                                    <span class="text-xs text-gray-500">5 hours ago</span>
+                                                </div>
+                                                <p class="text-sm text-gray-600 truncate">Important: Fee payment deadline reminder for Semester 2</p>
+                                                <div class="flex items-center mt-1">
+                                                    <span class="inline-block w-2 h-2 bg-orange-500 rounded-full mr-2"></span>
+                                                    <span class="text-xs text-orange-600 font-medium">Finance</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Message 3 -->
+                                    <div class="message-card p-4 border-b border-gray-200 cursor-pointer">
+                                        <div class="flex items-start space-x-3">
+                                            <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                                <i class="fas fa-user-friends text-green-600"></i>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <div class="flex items-center justify-between">
+                                                    <h4 class="text-sm font-semibold text-gray-900 truncate">Study Group - CS401</h4>
+                                                    <span class="text-xs text-gray-500">Yesterday</span>
+                                                </div>
+                                                <p class="text-sm text-gray-600 truncate">Maria: Let's meet tomorrow at 2 PM in the library to work on the project</p>
+                                                <div class="flex items-center mt-1">
+                                                    <span class="inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                                    <span class="text-xs text-green-600 font-medium">Study Group</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Message 4 -->
+                                    <div class="message-card p-4 border-b border-gray-200 cursor-pointer">
+                                        <div class="flex items-start space-x-3">
+                                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                                <i class="fas fa-database text-blue-600"></i>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <div class="flex items-center justify-between">
+                                                    <h4 class="text-sm font-semibold text-gray-900 truncate">Prof. James Johnson</h4>
+                                                    <span class="text-xs text-gray-500">2 days ago</span>
+                                                </div>
+                                                <p class="text-sm text-gray-600 truncate">Additional resources for Database Systems assignment</p>
+                                                <div class="flex items-center mt-1">
+                                                    <span class="inline-block w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                                                    <span class="text-xs text-blue-600 font-medium">Database Systems</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Message 5 -->
+                                    <div class="message-card p-4 border-b border-gray-200 cursor-pointer">
+                                        <div class="flex items-start space-x-3">
+                                            <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                                                <i class="fas fa-project-diagram text-purple-600"></i>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <div class="flex items-center justify-between">
+                                                    <h4 class="text-sm font-semibold text-gray-900 truncate">Dr. Michael Brown</h4>
+                                                    <span class="text-xs text-gray-500">3 days ago</span>
+                                                </div>
+                                                <p class="text-sm text-gray-600 truncate">Office hours changed for this week - check updated schedule</p>
+                                                <div class="flex items-center mt-1">
+                                                    <span class="inline-block w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
+                                                    <span class="text-xs text-purple-600 font-medium">Software Engineering</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Message View -->
+                            <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                                <div class="p-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                                                <i class="fas fa-chalkboard-teacher text-indigo-600"></i>
+                                            </div>
+                                            <div>
+                                                <h3 class="text-lg font-semibold text-gray-800">Dr. Sarah Smith</h3>
+                                                <p class="text-sm text-gray-600">Web Development Lecturer</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex space-x-2">
+                                            <button class="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
+                                                <i class="fas fa-phone"></i>
+                                            </button>
+                                            <button class="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
+                                                <i class="fas fa-video"></i>
+                                            </button>
+                                            <button class="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="chat-container p-4 bg-gray-50">
+                                    <!-- Received Message -->
+                                    <div class="flex mb-4">
+                                        <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
+                                            <i class="fas fa-chalkboard-teacher text-indigo-600 text-sm"></i>
+                                        </div>
+                                        <div class="message-received max-w-xs lg:max-w-md px-4 py-2">
+                                            <p class="text-sm">Hi Alex, I've reviewed your Web Development project submission. You've done excellent work on the frontend design and user interface.</p>
+                                            <span class="text-xs opacity-70 block mt-1">10:24 AM</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Received Message -->
+                                    <div class="flex mb-4">
+                                        <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
+                                            <i class="fas fa-chalkboard-teacher text-indigo-600 text-sm"></i>
+                                        </div>
+                                        <div class="message-received max-w-xs lg:max-w-md px-4 py-2">
+                                            <p class="text-sm">I have some suggestions for improving the backend functionality and error handling. Could we schedule a quick meeting to discuss this?</p>
+                                            <span class="text-xs opacity-70 block mt-1">10:25 AM</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Sent Message -->
+                                    <div class="flex justify-end mb-4">
+                                        <div class="message-sent max-w-xs lg:max-w-md px-4 py-2">
+                                            <p class="text-sm">Thank you Dr. Smith! I'd appreciate your feedback. I'm available tomorrow between 2-4 PM or Thursday morning.</p>
+                                            <span class="text-xs opacity-70 block mt-1 text-right">10:30 AM</span>
+                                        </div>
+                                        <div class="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center ml-3">
+                                            <span class="text-white text-xs font-bold">AJ</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Received Message -->
+                                    <div class="flex mb-4">
+                                        <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
+                                            <i class="fas fa-chalkboard-teacher text-indigo-600 text-sm"></i>
+                                        </div>
+                                        <div class="message-received max-w-xs lg:max-w-md px-4 py-2">
+                                            <p class="text-sm">Tomorrow at 2:30 PM works perfectly. Let's meet in my office (CS Building, Room 204). I'll share a document with detailed feedback beforehand.</p>
+                                            <span class="text-xs opacity-70 block mt-1">10:32 AM</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Sent Message -->
+                                    <div class="flex justify-end mb-4">
+                                        <div class="message-sent max-w-xs lg:max-w-md px-4 py-2">
+                                            <p class="text-sm">Great! I'll be there at 2:30 PM tomorrow. Looking forward to it. Thank you!</p>
+                                            <span class="text-xs opacity-70 block mt-1 text-right">10:33 AM</span>
+                                        </div>
+                                        <div class="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center ml-3">
+                                            <span class="text-white text-xs font-bold">AJ</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Typing Indicator -->
+                                    <div class="flex mb-4">
+                                        <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
+                                            <i class="fas fa-chalkboard-teacher text-indigo-600 text-sm"></i>
+                                        </div>
+                                        <div class="message-received px-4 py-2">
+                                            <div class="typing-indicator">
+                                                <span class="text-sm text-gray-500 mr-2">Dr. Smith is typing</span>
+                                                <div class="typing-dot"></div>
+                                                <div class="typing-dot"></div>
+                                                <div class="typing-dot"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Message Input -->
+                                <div class="p-4 border-t border-gray-200">
+                                    <div class="flex space-x-2">
+                                        <button class="p-2 text-gray-500 hover:text-indigo-600 rounded-lg transition-colors">
+                                            <i class="fas fa-paperclip"></i>
+                                        </button>
+                                        <button class="p-2 text-gray-500 hover:text-indigo-600 rounded-lg transition-colors">
+                                            <i class="fas fa-image"></i>
+                                        </button>
+                                        <input type="text" placeholder="Type your message..." class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                        <button class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                                            <i class="fas fa-paper-plane"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Chats -->
+                    <div class="tab-content" id="chats">
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800">Active Chats</h3>
+                            <p class="text-gray-600">Your ongoing conversations with lecturers and classmates</p>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                            <div class="text-center py-12">
+                                <i class="fas fa-comments text-gray-400 text-4xl mb-4"></i>
+                                <h4 class="text-lg font-medium text-gray-700">Active Chats</h4>
+                                <p class="text-gray-500 mt-2">Your ongoing chat conversations will be displayed here</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Contacts -->
+                    <div class="tab-content" id="contacts">
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800">Contacts Directory</h3>
+                            <p class="text-gray-600">Connect with lecturers, staff, and fellow students</p>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                            <div class="text-center py-12">
+                                <i class="fas fa-address-book text-gray-400 text-4xl mb-4"></i>
+                                <h4 class="text-lg font-medium text-gray-700">Contacts Directory</h4>
+                                <p class="text-gray-500 mt-2">Your College contacts and directory will be displayed here</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Support -->
+                    <div class="tab-content" id="support">
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800">Support & Help Desk</h3>
+                            <p class="text-gray-600">Get assistance with technical issues and College services</p>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                            <div class="text-center py-12">
+                                <i class="fas fa-headset text-gray-400 text-4xl mb-4"></i>
+                                <h4 class="text-lg font-medium text-gray-700">Support Center</h4>
+                                <p class="text-gray-500 mt-2">Technical support and help desk services will be displayed here</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Mobile menu toggle
+        $('#menu-toggle').click(function() {
+            $('.sidebar').toggleClass('active');
+            $('.overlay').toggleClass('active');
+        });
+        
+        // Close sidebar when clicking overlay
+        $('.overlay').click(function() {
+            $('.sidebar').removeClass('active');
+            $('.overlay').removeClass('active');
+        });
+        
+        // Tab functionality
+        $('.tab-button').click(function() {
+            // Remove active class from all tabs
+            $('.tab-button').removeClass('active');
+            
+            // Add active class to clicked tab
+            $(this).addClass('active');
+            
+            // Hide all tab content
+            $('.tab-content').removeClass('active');
+            
+            // Show the selected tab content
+            const tabId = $(this).data('tab');
+            $('#' + tabId).addClass('active');
+        });
+        
+        // Message selection
+        $('.message-card').click(function() {
+            $('.message-card').removeClass('conversation-active');
+            $(this).addClass('conversation-active');
+            
+            // Remove unread indicator
+            $(this).removeClass('message-unread');
+        });
+        
+        // Simulate typing indicator
+        setInterval(function() {
+            $('.typing-indicator').fadeToggle(500);
+        }, 2000);
+        
+        // Message sending
+        $('.chat-container + .p-4 button:contains("Send")').click(function() {
+            const messageInput = $(this).siblings('input[type="text"]');
+            const messageText = messageInput.val().trim();
+            
+            if (messageText) {
+                const timestamp = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
+                $('.chat-container').append(`
+                    <div class="flex justify-end mb-4">
+                        <div class="message-sent max-w-xs lg:max-w-md px-4 py-2">
+                            <p class="text-sm">${messageText}</p>
+                            <span class="text-xs opacity-70 block mt-1 text-right">${timestamp}</span>
+                        </div>
+                        <div class="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center ml-3">
+                            <span class="text-white text-xs font-bold">AJ</span>
+                        </div>
+                    </div>
+                `);
+                
+                messageInput.val('');
+                $('.chat-container').scrollTop($('.chat-container')[0].scrollHeight);
+                
+                // Simulate reply after 2 seconds
+                setTimeout(function() {
+                    $('.chat-container').append(`
+                        <div class="flex mb-4">
+                            <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-chalkboard-teacher text-indigo-600 text-sm"></i>
+                            </div>
+                            <div class="message-received max-w-xs lg:max-w-md px-4 py-2">
+                                <p class="text-sm">Thanks for your message. I'll get back to you soon.</p>
+                                <span class="text-xs opacity-70 block mt-1">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                            </div>
+                        </div>
+                    `);
+                    $('.chat-container').scrollTop($('.chat-container')[0].scrollHeight);
+                }, 2000);
+            }
+        });
+        
+        // Enter key to send message
+        $('.chat-container + .p-4 input[type="text"]').keypress(function(e) {
+            if (e.which === 13) {
+                $(this).siblings('button').click();
+            }
+        });
+        
+        // Simulate loading data
+        $(document).ready(function() {
+            console.log("Messages page loaded successfully");
+            
+            // Scroll to bottom of chat
+            $('.chat-container').scrollTop($('.chat-container')[0].scrollHeight);
+            
+            // Simulate notification count update
+            setTimeout(function() {
+                $('.notification-dot').css('background-color', '#ef4444');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

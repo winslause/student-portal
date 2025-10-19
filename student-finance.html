@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance | Phantom College</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --secondary: #10b981;
+            --accent: #f59e0b;
+            --dark: #1e293b;
+            --light: #f8fafc;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        }
+        
+        .sidebar {
+            transition: all 0.3s ease;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .sidebar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb {
+            background: #c5c5c5;
+            border-radius: 3px;
+        }
+        
+        .card-hover {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .progress-bar {
+            height: 8px;
+            border-radius: 4px;
+            background-color: #e2e8f0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .notification-dot {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 12px;
+            height: 12px;
+            background-color: #ef4444;
+            border-radius: 50%;
+        }
+        
+        .sidebar-item.active {
+            background: linear-gradient(to right, #4f46e5, #7c3aed);
+            color: white;
+            border-right: 3px solid white;
+        }
+        
+        .sidebar-item.active i, 
+        .sidebar-item.active span {
+            color: white !important;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .tab-button.active {
+            background-color: #4f46e5;
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                position: fixed;
+                z-index: 20;
+                width: 280px;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 15;
+            }
+            
+            .overlay.active {
+                display: block;
+            }
+        }
+        
+        .payment-status-paid {
+            background-color: #10b981;
+            color: white;
+        }
+        
+        .payment-status-pending {
+            background-color: #f59e0b;
+            color: white;
+        }
+        
+        .payment-status-overdue {
+            background-color: #ef4444;
+            color: white;
+        }
+        
+        .status-badge {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-weight: 500;
+        }
+        
+        .amount-positive {
+            color: #10b981;
+            font-weight: 600;
+        }
+        
+        .amount-negative {
+            color: #ef4444;
+            font-weight: 600;
+        }
+        
+        .finance-card {
+            transition: all 0.3s ease;
+        }
+        
+        .finance-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Overlay for mobile -->
+    <div class="overlay"></div>
+    
+    <!-- Main Container -->
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="sidebar w-64 bg-white shadow-lg fixed h-full z-10">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-xl">P</span>
+                    </div>
+                    <h1 class="text-xl font-bold text-gray-800 ml-3">Phantom College</h1>
+                </div>
+            </div>
+            
+            <div class="p-4">
+                <div class="mb-8">
+                    <div class="flex items-center mb-6">
+                        <div class="w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                            AJ
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="font-semibold text-gray-800">Alex Johnson</h3>
+                            <p class="text-sm text-gray-500">BSc. Computer Science</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-4 border border-indigo-100">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-medium text-indigo-700">Current GPA</span>
+                            <span class="text-sm font-bold text-indigo-700">3.75</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill bg-gradient-to-r from-indigo-500 to-purple-500" style="width: 85%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <nav>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="index.html.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-home mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">Dashboard</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-courses.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-book mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">My Courses</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-timetable.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-calendar-alt mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">Timetable</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-assignments.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-file-alt mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">Assignments</span>
+                                <span class="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-1">3</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-results.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-chart-bar mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">Results</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-finance.html" class="sidebar-item flex items-center p-3 text-white rounded-lg active">
+                                <i class="fas fa-money-bill-wave mr-3 text-white"></i>
+                                <span class="text-white">Finance</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-profile.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-user mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">My Profile</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-messages.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-comments mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">Messages</span>
+                                <span class="ml-auto bg-green-500 text-white text-xs rounded-full px-2 py-1">5</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-attendance.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-user-check mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">Attendance</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-profile.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-cog mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">Settings</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="flex-1 md:ml-64">
+            <!-- Header -->
+            <header class="bg-white shadow-sm py-4 px-6 flex justify-between items-center">
+                <div class="flex items-center">
+                    <button id="menu-toggle" class="md:hidden text-gray-500 focus:outline-none">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    <h2 class="text-xl font-semibold text-gray-800 ml-4">Finance & Payments</h2>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <button class="text-gray-500 focus:outline-none">
+                            <i class="fas fa-bell text-xl"></i>
+                            <span class="notification-dot"></span>
+                        </button>
+                    </div>
+                    <div class="relative">
+                        <button class="flex items-center text-gray-700 focus:outline-none">
+                            <div class="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                                AJ
+                            </div>
+                            <span class="ml-2 hidden md:inline">Alex Johnson</span>
+                            <i class="fas fa-chevron-down ml-1 text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Finance Content -->
+            <main class="p-6">
+                <!-- Header Section -->
+                <div class="mb-8">
+                    <h1 class="text-2xl font-bold text-gray-800">Financial Overview</h1>
+                    <p class="text-gray-600">Manage your fee payments, view statements, and track your financial history</p>
+                </div>
+                
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-gradient-to-br from-white to-red-50 rounded-xl shadow-sm p-6 card-hover border border-red-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-money-bill-wave text-red-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Outstanding Balance</h3>
+                                <p class="text-2xl font-bold text-gray-800">KSh 45,000</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-white to-green-50 rounded-xl shadow-sm p-6 card-hover border border-green-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Paid This Semester</h3>
+                                <p class="text-2xl font-bold text-gray-800">KSh 105,000</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-white to-blue-50 rounded-xl shadow-sm p-6 card-hover border border-blue-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-calendar-day text-blue-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Next Payment Due</h3>
+                                <p class="text-2xl font-bold text-gray-800">15 Nov</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-white to-purple-50 rounded-xl shadow-sm p-6 card-hover border border-purple-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-receipt text-purple-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Payment Plan</h3>
+                                <p class="text-2xl font-bold text-gray-800">Installment</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tabs Navigation -->
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 mb-6">
+                    <div class="border-b border-gray-200">
+                        <div class="flex overflow-x-auto">
+                            <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-indigo-600 whitespace-nowrap active" data-tab="overview">
+                                Financial Overview
+                            </button>
+                            <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-indigo-600 whitespace-nowrap" data-tab="payments">
+                                Make Payment
+                            </button>
+                            <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-indigo-600 whitespace-nowrap" data-tab="history">
+                                Payment History
+                            </button>
+                            <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-indigo-600 whitespace-nowrap" data-tab="statements">
+                                Fee Statements
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tab Content -->
+                <div>
+                    <!-- Financial Overview -->
+                    <div class="tab-content active" id="overview">
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800">Financial Summary - Semester 2, 2025</h3>
+                            <p class="text-gray-600">Your current financial status and upcoming payments</p>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                            <!-- Fee Breakdown -->
+                            <div class="lg:col-span-2 bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                                <h4 class="text-lg font-semibold text-gray-800 mb-4">Fee Breakdown</h4>
+                                <div class="space-y-4">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-gray-700">Tuition Fees</span>
+                                        <span class="font-medium text-gray-800">KSh 120,000</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-gray-700">Registration Fees</span>
+                                        <span class="font-medium text-gray-800">KSh 5,000</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-gray-700">Library Fees</span>
+                                        <span class="font-medium text-gray-800">KSh 2,000</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-gray-700">Student Activity</span>
+                                        <span class="font-medium text-gray-800">KSh 3,000</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-gray-700">Medical Insurance</span>
+                                        <span class="font-medium text-gray-800">KSh 4,000</span>
+                                    </div>
+                                    <div class="border-t pt-4 flex justify-between items-center font-semibold">
+                                        <span class="text-gray-800">Total Fees</span>
+                                        <span class="text-gray-800">KSh 134,000</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-gray-700">Amount Paid</span>
+                                        <span class="font-medium amount-positive">KSh 105,000</span>
+                                    </div>
+                                    <div class="border-t pt-4 flex justify-between items-center font-bold">
+                                        <span class="text-gray-800">Outstanding Balance</span>
+                                        <span class="amount-negative">KSh 29,000</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Payment Schedule -->
+                            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                                <h4 class="text-lg font-semibold text-gray-800 mb-4">Payment Schedule</h4>
+                                <div class="space-y-4">
+                                    <div class="p-3 bg-green-50 rounded-lg border border-green-200">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-sm font-medium text-green-800">1st Installment</span>
+                                            <span class="text-xs text-green-600">Paid</span>
+                                        </div>
+                                        <p class="text-sm text-green-700">KSh 50,000 • 15 Aug 2025</p>
+                                    </div>
+                                    
+                                    <div class="p-3 bg-green-50 rounded-lg border border-green-200">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-sm font-medium text-green-800">2nd Installment</span>
+                                            <span class="text-xs text-green-600">Paid</span>
+                                        </div>
+                                        <p class="text-sm text-green-700">KSh 55,000 • 15 Sep 2025</p>
+                                    </div>
+                                    
+                                    <div class="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-sm font-medium text-yellow-800">3rd Installment</span>
+                                            <span class="text-xs text-yellow-600">Due Soon</span>
+                                        </div>
+                                        <p class="text-sm text-yellow-700">KSh 29,000 • 15 Nov 2025</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-6 pt-4 border-t border-gray-200">
+                                    <h5 class="text-sm font-medium text-gray-700 mb-2">Payment Methods</h5>
+                                    <div class="flex space-x-2">
+                                        <div class="flex items-center justify-center w-10 h-6 bg-blue-100 rounded">
+                                            <span class="text-xs font-medium text-blue-800">M-Pesa</span>
+                                        </div>
+                                        <div class="flex items-center justify-center w-10 h-6 bg-green-100 rounded">
+                                            <span class="text-xs font-medium text-green-800">Visa</span>
+                                        </div>
+                                        <div class="flex items-center justify-center w-10 h-6 bg-purple-100 rounded">
+                                            <span class="text-xs font-medium text-purple-800">Bank</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Important Notices -->
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                            <div class="flex">
+                                <i class="fas fa-exclamation-triangle text-yellow-600 mt-1 mr-3"></i>
+                                <div>
+                                    <h4 class="text-sm font-medium text-yellow-800">Important Notice</h4>
+                                    <p class="text-sm text-yellow-700 mt-1">Your third installment of KSh 29,000 is due on 15th November 2025. Late payments will attract a penalty of 5% per month.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Make Payment -->
+                    <div class="tab-content" id="payments">
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800">Make a Payment</h3>
+                            <p class="text-gray-600">Pay your fees securely using our payment methods</p>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- Payment Methods -->
+                            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                                <h4 class="text-lg font-semibold text-gray-800 mb-4">Select Payment Method</h4>
+                                
+                                <div class="space-y-4">
+                                    <div class="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 hover:bg-indigo-50 transition-colors cursor-pointer">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-mobile-alt text-green-600"></i>
+                                            </div>
+                                            <div class="ml-4">
+                                                <h5 class="font-medium text-gray-800">M-Pesa</h5>
+                                                <p class="text-sm text-gray-600">Pay via M-Pesa Lipa Na M-Pesa</p>
+                                            </div>
+                                            <div class="ml-auto">
+                                                <i class="fas fa-chevron-right text-gray-400"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 hover:bg-indigo-50 transition-colors cursor-pointer">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                <i class="fab fa-cc-visa text-blue-600"></i>
+                                            </div>
+                                            <div class="ml-4">
+                                                <h5 class="font-medium text-gray-800">Credit/Debit Card</h5>
+                                                <p class="text-sm text-gray-600">Pay using Visa or MasterCard</p>
+                                            </div>
+                                            <div class="ml-auto">
+                                                <i class="fas fa-chevron-right text-gray-400"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 hover:bg-indigo-50 transition-colors cursor-pointer">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-College text-purple-600"></i>
+                                            </div>
+                                            <div class="ml-4">
+                                                <h5 class="font-medium text-gray-800">Bank Transfer</h5>
+                                                <p class="text-sm text-gray-600">Direct bank transfer</p>
+                                            </div>
+                                            <div class="ml-auto">
+                                                <i class="fas fa-chevron-right text-gray-400"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Payment Details -->
+                            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                                <h4 class="text-lg font-semibold text-gray-800 mb-4">Payment Details</h4>
+                                
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Amount to Pay (KSh)</label>
+                                        <input type="number" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Enter amount" value="29000">
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Payment For</label>
+                                        <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                            <option selected>Tuition Fees - 3rd Installment</option>
+                                            <option>Registration Fees</option>
+                                            <option>Library Fees</option>
+                                            <option>Other Fees</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number (for M-Pesa)</label>
+                                        <input type="tel" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="+254 712 345 678" value="+254712345678">
+                                    </div>
+                                    
+                                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                        <h5 class="text-sm font-medium text-blue-800 mb-2">M-Pesa Instructions</h5>
+                                        <ol class="text-sm text-blue-700 list-decimal list-inside space-y-1">
+                                            <li>Go to M-Pesa menu</li>
+                                            <li>Select Lipa Na M-Pesa</li>
+                                            <li>Select Pay Bill</li>
+                                            <li>Enter Business No: 123456</li>
+                                            <li>Enter Account No: PU/CS/2021/0012</li>
+                                            <li>Enter Amount</li>
+                                            <li>Enter your M-Pesa PIN</li>
+                                        </ol>
+                                    </div>
+                                    
+                                    <button class="w-full py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                                        Proceed to Payment
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Payment History -->
+                    <div class="tab-content" id="history">
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800">Payment History</h3>
+                            <p class="text-gray-600">Your complete payment transaction history</p>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+                            <div class="overflow-x-auto">
+                                <table class="w-full">
+                                    <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction ID</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Receipt</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-200">
+                                        <tr class="finance-card">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">15 Sep 2025</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">TXN-789012</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">Tuition - 2nd Installment</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm amount-positive">KSh 55,000</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">M-Pesa</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="status-badge payment-status-paid">Completed</span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                                <button class="text-indigo-600 hover:text-indigo-900">
+                                                    <i class="fas fa-download mr-1"></i> Download
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <tr class="finance-card">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">15 Aug 2025</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">TXN-789011</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">Tuition - 1st Installment</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm amount-positive">KSh 50,000</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">Bank Transfer</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="status-badge payment-status-paid">Completed</span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                                <button class="text-indigo-600 hover:text-indigo-900">
+                                                    <i class="fas fa-download mr-1"></i> Download
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <tr class="finance-card">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">05 Aug 2025</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">TXN-789010</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">Registration Fees</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm amount-positive">KSh 5,000</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">M-Pesa</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="status-badge payment-status-paid">Completed</span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                                <button class="text-indigo-600 hover:text-indigo-900">
+                                                    <i class="fas fa-download mr-1"></i> Download
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <tr class="finance-card">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">01 Aug 2025</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">TXN-789009</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">Medical Insurance</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm amount-positive">KSh 4,000</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">M-Pesa</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="status-badge payment-status-paid">Completed</span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                                <button class="text-indigo-600 hover:text-indigo-900">
+                                                    <i class="fas fa-download mr-1"></i> Download
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <tr class="finance-card">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">25 Jul 2025</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">TXN-789008</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">Library & Activity Fees</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm amount-positive">KSh 5,000</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">Credit Card</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="status-badge payment-status-paid">Completed</span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                                <button class="text-indigo-600 hover:text-indigo-900">
+                                                    <i class="fas fa-download mr-1"></i> Download
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Fee Statements -->
+                    <div class="tab-content" id="statements">
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800">Fee Statements</h3>
+                            <p class="text-gray-600">Download your official fee statements and invoices</p>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="border border-gray-200 rounded-lg p-4">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-file-invoice text-blue-600"></i>
+                                            </div>
+                                            <div class="ml-4">
+                                                <h4 class="text-sm font-medium text-gray-800">Semester 2, 2025</h4>
+                                                <p class="text-xs text-gray-500">Generated: 01 Aug 2025</p>
+                                            </div>
+                                        </div>
+                                        <button class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                                            <i class="fas fa-download mr-2"></i> Download
+                                        </button>
+                                    </div>
+                                    <div class="text-sm text-gray-600">
+                                        <p>Total Fees: <span class="font-medium">KSh 134,000</span></p>
+                                        <p>Balance: <span class="font-medium amount-negative">KSh 29,000</span></p>
+                                    </div>
+                                </div>
+                                
+                                <div class="border border-gray-200 rounded-lg p-4">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-file-invoice text-blue-600"></i>
+                                            </div>
+                                            <div class="ml-4">
+                                                <h4 class="text-sm font-medium text-gray-800">Semester 1, 2025</h4>
+                                                <p class="text-xs text-gray-500">Generated: 15 Jan 2025</p>
+                                            </div>
+                                        </div>
+                                        <button class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                                            <i class="fas fa-download mr-2"></i> Download
+                                        </button>
+                                    </div>
+                                    <div class="text-sm text-gray-600">
+                                        <p>Total Fees: <span class="font-medium">KSh 128,000</span></p>
+                                        <p>Status: <span class="font-medium amount-positive">Fully Paid</span></p>
+                                    </div>
+                                </div>
+                                
+                                <div class="border border-gray-200 rounded-lg p-4">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-file-invoice text-blue-600"></i>
+                                            </div>
+                                            <div class="ml-4">
+                                                <h4 class="text-sm font-medium text-gray-800">Semester 2, 2022</h4>
+                                                <p class="text-xs text-gray-500">Generated: 01 Aug 2022</p>
+                                            </div>
+                                        </div>
+                                        <button class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                                            <i class="fas fa-download mr-2"></i> Download
+                                        </button>
+                                    </div>
+                                    <div class="text-sm text-gray-600">
+                                        <p>Total Fees: <span class="font-medium">KSh 122,000</span></p>
+                                        <p>Status: <span class="font-medium amount-positive">Fully Paid</span></p>
+                                    </div>
+                                </div>
+                                
+                                <div class="border border-gray-200 rounded-lg p-4">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-file-invoice text-blue-600"></i>
+                                            </div>
+                                            <div class="ml-4">
+                                                <h4 class="text-sm font-medium text-gray-800">Semester 1, 2022</h4>
+                                                <p class="text-xs text-gray-500">Generated: 15 Jan 2022</p>
+                                            </div>
+                                        </div>
+                                        <button class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                                            <i class="fas fa-download mr-2"></i> Download
+                                        </button>
+                                    </div>
+                                    <div class="text-sm text-gray-600">
+                                        <p>Total Fees: <span class="font-medium">KSh 118,000</span></p>
+                                        <p>Status: <span class="font-medium amount-positive">Fully Paid</span></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Mobile menu toggle
+        $('#menu-toggle').click(function() {
+            $('.sidebar').toggleClass('active');
+            $('.overlay').toggleClass('active');
+        });
+        
+        // Close sidebar when clicking overlay
+        $('.overlay').click(function() {
+            $('.sidebar').removeClass('active');
+            $('.overlay').removeClass('active');
+        });
+        
+        // Tab functionality
+        $('.tab-button').click(function() {
+            // Remove active class from all tabs
+            $('.tab-button').removeClass('active');
+            
+            // Add active class to clicked tab
+            $(this).addClass('active');
+            
+            // Hide all tab content
+            $('.tab-content').removeClass('active');
+            
+            // Show the selected tab content
+            const tabId = $(this).data('tab');
+            $('#' + tabId).addClass('active');
+        });
+        
+        // Payment method selection
+        $('.border-gray-200').click(function() {
+            $('.border-gray-200').removeClass('border-indigo-300 bg-indigo-50');
+            $(this).addClass('border-indigo-300 bg-indigo-50');
+        });
+        
+        // Download simulation
+        $('button:contains("Download")').click(function(e) {
+            e.preventDefault();
+            const documentType = $(this).closest('.flex').find('h4').text() || 'document';
+            alert(`Downloading ${documentType}...`);
+        });
+        
+        // Payment simulation
+        $('button:contains("Proceed to Payment")').click(function(e) {
+            e.preventDefault();
+            const amount = $('input[type="number"]').val();
+            alert(`Redirecting to payment gateway to pay KSh ${amount}...`);
+        });
+        
+        // Simulate loading data
+        $(document).ready(function() {
+            console.log("Finance page loaded successfully");
+            
+            // Simulate notification count update
+            setTimeout(function() {
+                $('.notification-dot').css('background-color', '#ef4444');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

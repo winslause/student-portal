@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assignments | Phantom College</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --secondary: #10b981;
+            --accent: #f59e0b;
+            --dark: #1e293b;
+            --light: #f8fafc;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        }
+        
+        .sidebar {
+            transition: all 0.3s ease;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .sidebar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb {
+            background: #c5c5c5;
+            border-radius: 3px;
+        }
+        
+        .card-hover {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .progress-bar {
+            height: 8px;
+            border-radius: 4px;
+            background-color: #e2e8f0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .notification-dot {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 12px;
+            height: 12px;
+            background-color: #ef4444;
+            border-radius: 50%;
+        }
+        
+        .sidebar-item.active {
+            background: linear-gradient(to right, #4f46e5, #7c3aed);
+            color: white;
+            border-right: 3px solid white;
+        }
+        
+        .sidebar-item.active i, 
+        .sidebar-item.active span {
+            color: white !important;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .tab-button.active {
+            background-color: #4f46e5;
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                position: fixed;
+                z-index: 20;
+                width: 280px;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 15;
+            }
+            
+            .overlay.active {
+                display: block;
+            }
+        }
+        
+        .assignment-status-pending {
+            background-color: #f59e0b;
+            color: white;
+        }
+        
+        .assignment-status-submitted {
+            background-color: #10b981;
+            color: white;
+        }
+        
+        .assignment-status-overdue {
+            background-color: #ef4444;
+            color: white;
+        }
+        
+        .assignment-status-graded {
+            background-color: #3b82f6;
+            color: white;
+        }
+        
+        .status-badge {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-weight: 500;
+        }
+        
+        .assignment-card {
+            transition: all 0.3s ease;
+        }
+        
+        .assignment-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .priority-high {
+            border-left: 4px solid #ef4444;
+        }
+        
+        .priority-medium {
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .priority-low {
+            border-left: 4px solid #10b981;
+        }
+        
+        .file-upload-area {
+            border: 2px dashed #d1d5db;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .file-upload-area.dragover {
+            border-color: #4f46e5;
+            background-color: #eef2ff;
+        }
+        
+        .submission-preview {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Overlay for mobile -->
+    <div class="overlay"></div>
+    
+    <!-- Main Container -->
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="sidebar w-64 bg-white shadow-lg fixed h-full z-10">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-xl">P</span>
+                    </div>
+                    <h1 class="text-xl font-bold text-gray-800 ml-3">Phantom College</h1>
+                </div>
+            </div>
+            
+            <div class="p-4">
+                <div class="mb-8">
+                    <div class="flex items-center mb-6">
+                        <div class="w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                            AJ
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="font-semibold text-gray-800">Alex Johnson</h3>
+                            <p class="text-sm text-gray-500">BSc. Computer Science</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-4 border border-indigo-100">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-medium text-indigo-700">Current GPA</span>
+                            <span class="text-sm font-bold text-indigo-700">3.75</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill bg-gradient-to-r from-indigo-500 to-purple-500" style="width: 85%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <nav>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="index.html.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-home mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">Dashboard</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-courses.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-book mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">My Courses</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-timetable.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-calendar-alt mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">Timetable</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-assignments.html" class="sidebar-item flex items-center p-3 text-white rounded-lg active">
+                                <i class="fas fa-file-alt mr-3 text-white"></i>
+                                <span class="text-white">Assignments</span>
+                                <span class="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-1">3</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-results.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-chart-bar mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">Results</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-finance.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-money-bill-wave mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">Finance</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-profile.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-user mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">My Profile</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-messages.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-comments mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">Messages</span>
+                                <span class="ml-auto bg-green-500 text-white text-xs rounded-full px-2 py-1">5</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-attendance.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-user-check mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">Attendance</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="student-settings.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-cog mr-3 text-gray-500"></i>
+                                <span class="text-gray-700">Settings</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="flex-1 md:ml-64">
+            <!-- Header -->
+            <header class="bg-white shadow-sm py-4 px-6 flex justify-between items-center">
+                <div class="flex items-center">
+                    <button id="menu-toggle" class="md:hidden text-gray-500 focus:outline-none">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    <h2 class="text-xl font-semibold text-gray-800 ml-4">Assignments</h2>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <button class="text-gray-500 focus:outline-none">
+                            <i class="fas fa-bell text-xl"></i>
+                            <span class="notification-dot"></span>
+                        </button>
+                    </div>
+                    <div class="relative">
+                        <button class="flex items-center text-gray-700 focus:outline-none">
+                            <div class="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                                AJ
+                            </div>
+                            <span class="ml-2 hidden md:inline">Alex Johnson</span>
+                            <i class="fas fa-chevron-down ml-1 text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Assignments Content -->
+            <main class="p-6">
+                <!-- Header Section -->
+                <div class="mb-8">
+                    <h1 class="text-2xl font-bold text-gray-800">Assignments & Submissions</h1>
+                    <p class="text-gray-600">Manage your assignments, submit work, and track your progress</p>
+                </div>
+                
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-gradient-to-br from-white to-red-50 rounded-xl shadow-sm p-6 card-hover border border-red-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-clock text-red-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Pending Submission</h3>
+                                <p class="text-2xl font-bold text-gray-800">3</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-white to-green-50 rounded-xl shadow-sm p-6 card-hover border border-green-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Submitted</h3>
+                                <p class="text-2xl font-bold text-gray-800">8</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-white to-blue-50 rounded-xl shadow-sm p-6 card-hover border border-blue-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-chart-line text-blue-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Graded</h3>
+                                <p class="text-2xl font-bold text-gray-800">5</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-white to-orange-50 rounded-xl shadow-sm p-6 card-hover border border-orange-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-exclamation-triangle text-orange-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Overdue</h3>
+                                <p class="text-2xl font-bold text-gray-800">1</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tabs Navigation -->
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 mb-6">
+                    <div class="border-b border-gray-200">
+                        <div class="flex overflow-x-auto">
+                            <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-indigo-600 whitespace-nowrap active" data-tab="pending">
+                                Pending
+                            </button>
+                            <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-indigo-600 whitespace-nowrap" data-tab="submitted">
+                                Submitted
+                            </button>
+                            <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-indigo-600 whitespace-nowrap" data-tab="graded">
+                                Graded
+                            </button>
+                            <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-indigo-600 whitespace-nowrap" data-tab="all">
+                                All Assignments
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tab Content -->
+                <div>
+                    <!-- Pending Assignments -->
+                    <div class="tab-content active" id="pending">
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800">Pending Assignments</h3>
+                            <p class="text-gray-600">Assignments that require your submission</p>
+                        </div>
+                        
+                        <!-- Assignment Cards -->
+                        <div class="space-y-6">
+                            <!-- Assignment 1 -->
+                            <div class="assignment-card bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 priority-high">
+                                <div class="p-6">
+                                    <div class="flex flex-col md:flex-row md:items-start md:justify-between">
+                                        <div class="flex-1">
+                                            <div class="flex items-start justify-between mb-2">
+                                                <div>
+                                                    <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">CS401</span>
+                                                    <h3 class="text-xl font-bold text-gray-800 mt-2">Web Development Project - E-commerce Site</h3>
+                                                </div>
+                                                <span class="status-badge assignment-status-pending">Due Soon</span>
+                                            </div>
+                                            
+                                            <p class="text-gray-600 mb-4">Create a responsive e-commerce website using HTML, CSS, JavaScript and React. Implement user authentication, product catalog, shopping cart, and checkout functionality.</p>
+                                            
+                                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                                                <div class="flex items-center text-sm text-gray-600">
+                                                    <i class="fas fa-book mr-2 text-gray-400"></i>
+                                                    <span>Web Development</span>
+                                                </div>
+                                                <div class="flex items-center text-sm text-gray-600">
+                                                    <i class="fas fa-user mr-2 text-gray-400"></i>
+                                                    <span>Dr. Sarah Smith</span>
+                                                </div>
+                                                <div class="flex items-center text-sm text-gray-600">
+                                                    <i class="fas fa-calendar-day mr-2 text-gray-400"></i>
+                                                    <span>Due: 25 Oct 2025, 11:59 PM</span>
+                                                </div>
+                                                <div class="flex items-center text-sm text-gray-600">
+                                                    <i class="fas fa-weight-hanging mr-2 text-gray-400"></i>
+                                                    <span>Weight: 15%</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="flex items-center text-sm text-red-600 font-medium">
+                                                <i class="fas fa-exclamation-circle mr-2"></i>
+                                                <span>2 days remaining</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                                        <div class="flex items-center space-x-4">
+                                            <button class="view-details px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                                                <i class="fas fa-eye mr-2"></i> View Details
+                                            </button>
+                                            <button class="download-materials px-4 py-2 bg-gray-200 text-gray-800 text-sm rounded-lg font-medium hover:bg-gray-300 transition-colors">
+                                                <i class="fas fa-download mr-2"></i> Download Materials
+                                            </button>
+                                        </div>
+                                        <button class="submit-assignment px-6 py-2 bg-green-600 text-white text-sm rounded-lg font-medium hover:bg-green-700 transition-colors">
+                                            <i class="fas fa-paper-plane mr-2"></i> Submit Assignment
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Assignment 2 -->
+                            <div class="assignment-card bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 priority-medium">
+                                <div class="p-6">
+                                    <div class="flex flex-col md:flex-row md:items-start md:justify-between">
+                                        <div class="flex-1">
+                                            <div class="flex items-start justify-between mb-2">
+                                                <div>
+                                                    <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">CS402</span>
+                                                    <h3 class="text-xl font-bold text-gray-800 mt-2">Database Design - College Management System</h3>
+                                                </div>
+                                                <span class="status-badge assignment-status-pending">Pending</span>
+                                            </div>
+                                            
+                                            <p class="text-gray-600 mb-4">Design and implement a comprehensive database schema for a College management system. Create ER diagrams, normalize tables, and write SQL queries for common operations.</p>
+                                            
+                                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                                                <div class="flex items-center text-sm text-gray-600">
+                                                    <i class="fas fa-database mr-2 text-gray-400"></i>
+                                                    <span>Database Systems</span>
+                                                </div>
+                                                <div class="flex items-center text-sm text-gray-600">
+                                                    <i class="fas fa-user mr-2 text-gray-400"></i>
+                                                    <span>Prof. James Johnson</span>
+                                                </div>
+                                                <div class="flex items-center text-sm text-gray-600">
+                                                    <i class="fas fa-calendar-day mr-2 text-gray-400"></i>
+                                                    <span>Due: 30 Oct 2025, 11:59 PM</span>
+                                                </div>
+                                                <div class="flex items-center text-sm text-gray-600">
+                                                    <i class="fas fa-weight-hanging mr-2 text-gray-400"></i>
+                                                    <span>Weight: 10%</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="flex items-center text-sm text-orange-600 font-medium">
+                                                <i class="fas fa-clock mr-2"></i>
+                                                <span>7 days remaining</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                                        <div class="flex items-center space-x-4">
+                                            <button class="view-details px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                                                <i class="fas fa-eye mr-2"></i> View Details
+                                            </button>
+                                            <button class="download-materials px-4 py-2 bg-gray-200 text-gray-800 text-sm rounded-lg font-medium hover:bg-gray-300 transition-colors">
+                                                <i class="fas fa-download mr-2"></i> Download Materials
+                                            </button>
+                                        </div>
+                                        <button class="submit-assignment px-6 py-2 bg-green-600 text-white text-sm rounded-lg font-medium hover:bg-green-700 transition-colors">
+                                            <i class="fas fa-paper-plane mr-2"></i> Submit Assignment
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Assignment 3 -->
+                            <div class="assignment-card bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 priority-low">
+                                <div class="p-6">
+                                    <div class="flex flex-col md:flex-row md:items-start md:justify-between">
+                                        <div class="flex-1">
+                                            <div class="flex items-start justify-between mb-2">
+                                                <div>
+                                                    <span class="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-0.5 rounded">CS403</span>
+                                                    <h3 class="text-xl font-bold text-gray-800 mt-2">Software Requirements Specification</h3>
+                                                </div>
+                                                <span class="status-badge assignment-status-pending">Pending</span>
+                                            </div>
+                                            
+                                            <p class="text-gray-600 mb-4">Create a comprehensive Software Requirements Specification document for a library management system. Include functional and non-functional requirements, use cases, and user stories.</p>
+                                            
+                                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                                                <div class="flex items-center text-sm text-gray-600">
+                                                    <i class="fas fa-project-diagram mr-2 text-gray-400"></i>
+                                                    <span>Software Engineering</span>
+                                                </div>
+                                                <div class="flex items-center text-sm text-gray-600">
+                                                    <i class="fas fa-user mr-2 text-gray-400"></i>
+                                                    <span>Dr. Michael Brown</span>
+                                                </div>
+                                                <div class="flex items-center text-sm text-gray-600">
+                                                    <i class="fas fa-calendar-day mr-2 text-gray-400"></i>
+                                                    <span>Due: 5 Nov 2025, 11:59 PM</span>
+                                                </div>
+                                                <div class="flex items-center text-sm text-gray-600">
+                                                    <i class="fas fa-weight-hanging mr-2 text-gray-400"></i>
+                                                    <span>Weight: 12%</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="flex items-center text-sm text-green-600 font-medium">
+                                                <i class="fas fa-clock mr-2"></i>
+                                                <span>13 days remaining</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                                        <div class="flex items-center space-x-4">
+                                            <button class="view-details px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                                                <i class="fas fa-eye mr-2"></i> View Details
+                                            </button>
+                                            <button class="download-materials px-4 py-2 bg-gray-200 text-gray-800 text-sm rounded-lg font-medium hover:bg-gray-300 transition-colors">
+                                                <i class="fas fa-download mr-2"></i> Download Materials
+                                            </button>
+                                        </div>
+                                        <button class="submit-assignment px-6 py-2 bg-green-600 text-white text-sm rounded-lg font-medium hover:bg-green-700 transition-colors">
+                                            <i class="fas fa-paper-plane mr-2"></i> Submit Assignment
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Submitted Assignments -->
+                    <div class="tab-content" id="submitted">
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800">Submitted Assignments</h3>
+                            <p class="text-gray-600">Assignments you have submitted and are awaiting grading</p>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                            <div class="text-center py-12">
+                                <i class="fas fa-inbox text-gray-400 text-4xl mb-4"></i>
+                                <h4 class="text-lg font-medium text-gray-700">Submitted Assignments</h4>
+                                <p class="text-gray-500 mt-2">Your submitted assignments awaiting grading will be displayed here</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Graded Assignments -->
+                    <div class="tab-content" id="graded">
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800">Graded Assignments</h3>
+                            <p class="text-gray-600">Assignments that have been graded by your lecturers</p>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                            <div class="text-center py-12">
+                                <i class="fas fa-chart-line text-gray-400 text-4xl mb-4"></i>
+                                <h4 class="text-lg font-medium text-gray-700">Graded Assignments</h4>
+                                <p class="text-gray-500 mt-2">Your graded assignments with scores and feedback will be displayed here</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- All Assignments -->
+                    <div class="tab-content" id="all">
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800">All Assignments</h3>
+                            <p class="text-gray-600">Complete list of all your assignments</p>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                            <div class="text-center py-12">
+                                <i class="fas fa-tasks text-gray-400 text-4xl mb-4"></i>
+                                <h4 class="text-lg font-medium text-gray-700">All Assignments</h4>
+                                <p class="text-gray-500 mt-2">A comprehensive list of all your assignments will be displayed here</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Submission Modal -->
+    <div id="submission-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden">
+        <div class="relative top-20 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-xl bg-white">
+            <div class="flex justify-between items-center pb-3">
+                <h3 class="text-xl font-bold text-gray-800">Submit Assignment</h3>
+                <button id="close-modal" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="mt-4">
+                <h4 class="text-lg font-semibold text-gray-800 mb-2" id="modal-assignment-title">Web Development Project - E-commerce Site</h4>
+                <p class="text-gray-600 mb-6" id="modal-assignment-details">CS401 - Web Development | Due: 25 Oct 2025, 11:59 PM</p>
+                
+                <form id="submission-form" class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Submission Type</label>
+                        <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <option selected>File Upload</option>
+                            <option>Text Submission</option>
+                            <option>URL Submission</option>
+                            <option>Multiple Files</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Upload Files</label>
+                        <div class="file-upload-area relative border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer">
+                            <i class="fas fa-cloud-upload-alt text-gray-400 text-3xl mb-3"></i>
+                            <p class="text-sm text-gray-600">Drag and drop your files here or</p>
+                            <button type="button" class="mt-2 px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 transition-colors">
+                                Browse Files
+                            </button>
+                            <p class="text-xs text-gray-400 mt-2">Maximum file size: 50MB (PDF, DOC, ZIP, etc.)</p>
+                            <input type="file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" multiple>
+                        </div>
+                        <div class="submission-preview mt-4 hidden">
+                            <h5 class="text-sm font-medium text-gray-700 mb-2">Selected Files:</h5>
+                            <ul class="bg-gray-50 rounded-lg p-3 space-y-2">
+                                <!-- Files will be listed here -->
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Submission Notes (Optional)</label>
+                        <textarea rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Add any comments or notes for the lecturer..."></textarea>
+                    </div>
+                    
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <div class="flex">
+                            <i class="fas fa-exclamation-triangle text-yellow-600 mt-1 mr-3"></i>
+                            <div>
+                                <h4 class="text-sm font-medium text-yellow-800">Submission Guidelines</h4>
+                                <ul class="text-sm text-yellow-700 mt-1 list-disc list-inside space-y-1">
+                                    <li>Ensure all files are properly named with your student ID</li>
+                                    <li>Check that your submission is complete before finalizing</li>
+                                    <li>Late submissions will be penalized 10% per day</li>
+                                    <li>You cannot modify your submission after finalizing</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end pt-4 space-x-3">
+                        <button type="button" id="cancel-submission" class="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                            Submit Assignment
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mobile menu toggle
+        $('#menu-toggle').click(function() {
+            $('.sidebar').toggleClass('active');
+            $('.overlay').toggleClass('active');
+        });
+        
+        // Close sidebar when clicking overlay
+        $('.overlay').click(function() {
+            $('.sidebar').removeClass('active');
+            $('.overlay').removeClass('active');
+        });
+        
+        // Tab functionality
+        $('.tab-button').click(function() {
+            // Remove active class from all tabs
+            $('.tab-button').removeClass('active');
+            
+            // Add active class to clicked tab
+            $(this).addClass('active');
+            
+            // Hide all tab content
+            $('.tab-content').removeClass('active');
+            
+            // Show the selected tab content
+            const tabId = $(this).data('tab');
+            $('#' + tabId).addClass('active');
+        });
+        
+        // Submission modal functionality
+        $('.submit-assignment').click(function() {
+            const assignmentCard = $(this).closest('.assignment-card');
+            const title = assignmentCard.find('h3').text();
+            const course = assignmentCard.find('.bg-blue-100, .bg-green-100, .bg-purple-100').text();
+            const dueDate = assignmentCard.find('.fa-calendar-day').parent().text().replace('Due: ', '');
+            
+            $('#modal-assignment-title').text(title);
+            $('#modal-assignment-details').text(`${course} | Due: ${dueDate}`);
+            $('#submission-modal').removeClass('hidden');
+        });
+        
+        $('#close-modal, #cancel-submission').click(function() {
+            $('#submission-modal').addClass('hidden');
+        });
+        
+        // File upload functionality
+        $('.file-upload-area').on('dragover', function(e) {
+            e.preventDefault();
+            $(this).addClass('dragover');
+        });
+        
+        $('.file-upload-area').on('dragleave', function() {
+            $(this).removeClass('dragover');
+        });
+        
+        $('.file-upload-area').on('drop', function(e) {
+            e.preventDefault();
+            $(this).removeClass('dragover');
+            handleFiles(e.originalEvent.dataTransfer.files);
+        });
+        
+        $('.file-upload-area input[type="file"]').change(function() {
+            handleFiles(this.files);
+        });
+        
+        function handleFiles(files) {
+            if (files.length > 0) {
+                $('.submission-preview').removeClass('hidden');
+                const fileList = $('.submission-preview ul');
+                fileList.empty();
+                
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    fileList.append(`
+                        <li class="flex items-center justify-between text-sm">
+                            <div class="flex items-center">
+                                <i class="fas fa-file text-gray-400 mr-2"></i>
+                                <span>${file.name}</span>
+                            </div>
+                            <span class="text-gray-500">${(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                        </li>
+                    `);
+                }
+            }
+        }
+        
+        // Form submission
+        $('#submission-form').submit(function(e) {
+            e.preventDefault();
+            alert('Assignment submitted successfully! You will receive a confirmation email shortly.');
+            $('#submission-modal').addClass('hidden');
+        });
+        
+        // View details simulation
+        $('.view-details').click(function() {
+            const assignmentTitle = $(this).closest('.assignment-card').find('h3').text();
+            alert(`Showing detailed instructions for: ${assignmentTitle}`);
+        });
+        
+        // Download materials simulation
+        $('.download-materials').click(function() {
+            const assignmentTitle = $(this).closest('.assignment-card').find('h3').text();
+            alert(`Downloading assignment materials for: ${assignmentTitle}`);
+        });
+        
+        // Simulate loading data
+        $(document).ready(function() {
+            console.log("Assignments page loaded successfully");
+            
+            // Simulate notification count update
+            setTimeout(function() {
+                $('.notification-dot').css('background-color', '#ef4444');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
