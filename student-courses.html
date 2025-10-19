@@ -103,6 +103,7 @@
                 position: fixed;
                 z-index: 20;
                 width: 280px;
+                left: 0;
             }
             
             .sidebar.active {
@@ -113,11 +114,12 @@
                 display: none;
                 position: fixed;
                 top: 0;
-                left: 0;
+                left: 280px;
                 right: 0;
                 bottom: 0;
                 background-color: rgba(0, 0, 0, 0.5);
                 z-index: 15;
+                width: calc(100% - 280px);
             }
             
             .overlay.active {
@@ -185,7 +187,7 @@
                 <nav>
                     <ul class="space-y-2">
                         <li>
-                            <a href="index.html.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                            <a href="index.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
                                 <i class="fas fa-home mr-3 text-gray-500"></i>
                                 <span class="text-gray-700">Dashboard</span>
                             </a>
@@ -589,7 +591,7 @@
                                         <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
                                             <i class="fas fa-brain text-indigo-600 text-xl"></i>
                                         </div>
-                                        <span class="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded">CS405</span>
+                                        <span class="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 mx-0.5 rounded">CS405</span>
                                     </div>
                                     <h3 class="text-lg font-bold text-gray-800 mb-2">Machine Learning</h3>
                                     <p class="text-gray-600 text-sm mb-4">Introduction to ML algorithms, neural networks, and data science</p>
@@ -684,7 +686,7 @@
                         <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
                             <div class="overflow-x-auto">
                                 <table class="w-full">
-                                    <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                                    <thead class="bg-gradient-to-r from-gray-50 to-white">
                                         <tr>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course Code</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course Name</th>
@@ -832,7 +834,7 @@
             
             // Show the selected tab content
             const tabId = $(this).data('tab');
-            $('#' + tabId).addClass('active');
+            $('#' + tabId).add('active');
         });
         
         // Course registration simulation

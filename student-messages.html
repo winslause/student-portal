@@ -103,6 +103,7 @@
                 position: fixed;
                 z-index: 20;
                 width: 280px;
+                left: 0;
             }
             
             .sidebar.active {
@@ -113,11 +114,12 @@
                 display: none;
                 position: fixed;
                 top: 0;
-                left: 0;
+                left: 280px;
                 right: 0;
                 bottom: 0;
                 background-color: rgba(0, 0, 0, 0.5);
                 z-index: 15;
+                width: calc(100% - 280px);
             }
             
             .overlay.active {
@@ -241,7 +243,7 @@
                 <nav>
                     <ul class="space-y-2">
                         <li>
-                            <a href="index.html.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                            <a href="index.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
                                 <i class="fas fa-home mr-3 text-gray-500"></i>
                                 <span class="text-gray-700">Dashboard</span>
                             </a>
@@ -297,7 +299,7 @@
                             </a>
                         </li>
                         <li>
-                            <a href="student-profile.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                            <a href="student-settings.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
                                 <i class="fas fa-cog mr-3 text-gray-500"></i>
                                 <span class="text-gray-700">Settings</span>
                             </a>
@@ -386,7 +388,7 @@
                     <div class="bg-gradient-to-br from-white to-orange-50 rounded-xl shadow-sm p-6 card-hover border border-orange-100">
                         <div class="flex items-center">
                             <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-comment-medical text-orange-600 text-xl"></i>
+                                <i class="fas fa-comment-dots text-orange-600 text-xl"></i>
                             </div>
                             <div class="ml-4">
                                 <h3 class="text-sm font-medium text-gray-500">Support Tickets</h3>
@@ -550,7 +552,7 @@
                             
                             <!-- Message View -->
                             <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                                <div class="p-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+                                <div class="p-6">
                                     <div class="flex items-center justify-between">
                                         <div class="flex items-center space-x-3">
                                             <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
@@ -762,50 +764,41 @@
         }, 2000);
         
         // Message sending
-        $('.chat-container + .p-4 button:contains("Send")').click(function() {
-            const messageInput = $(this).siblings('input[type="text"]');
-            const messageText = messageInput.val().trim();
-            
-            if (messageText) {
-                const timestamp = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                
-                $('.chat-container').append(`
-                    <div class="flex justify-end mb-4">
-                        <div class="message-sent max-w-xs lg:max-w-md px-4 py-2">
-                            <p class="text-sm">${messageText}</p>
-                            <span class="text-xs opacity-70 block mt-1 text-right">${timestamp}</span>
-                        </div>
-                        <div class="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center ml-3">
-                            <span class="text-white text-xs font-bold">AJ</span>
-                        </div>
-                    </div>
-                `);
-                
-                messageInput.val('');
-                $('.chat-container').scrollTop($('.chat-container')[0].scrollHeight);
-                
-                // Simulate reply after 2 seconds
-                setTimeout(function() {
+        $('.p-4.border-t input[type="text"]').keypress(function(e) {
+            if (e.which === 13) {
+                const messageText = $(this).val().trim();
+                if (messageText) {
+                    const timestamp = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                     $('.chat-container').append(`
-                        <div class="flex mb-4">
-                            <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
-                                <i class="fas fa-chalkboard-teacher text-indigo-600 text-sm"></i>
+                        <div class="flex justify-end mb-4">
+                            <div class="message-sent max-w-xs lg:max-w-md px-4 py-2">
+                                <p class="text-sm">${messageText}</p>
+                                <span class="text-xs opacity-70 block mt-1 text-right">${timestamp}</span>
                             </div>
-                            <div class="message-received max-w-xs lg:max-w-md px-4 py-2">
-                                <p class="text-sm">Thanks for your message. I'll get back to you soon.</p>
-                                <span class="text-xs opacity-70 block mt-1">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                            <div class="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center ml-3">
+                                <span class="text-white text-xs font-bold">AJ</span>
                             </div>
                         </div>
                     `);
+                    $(this).val('');
                     $('.chat-container').scrollTop($('.chat-container')[0].scrollHeight);
-                }, 2000);
-            }
-        });
-        
-        // Enter key to send message
-        $('.chat-container + .p-4 input[type="text"]').keypress(function(e) {
-            if (e.which === 13) {
-                $(this).siblings('button').click();
+                    
+                    // Simulate reply after 2 seconds
+                    setTimeout(function() {
+                        $('.chat-container').append(`
+                            <div class="flex mb-4">
+                                <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
+                                    <i class="fas fa-chalkboard-teacher text-indigo-600 text-sm"></i>
+                                </div>
+                                <div class="message-received max-w-xs lg:max-w-md px-4 py-2">
+                                    <p class="text-sm">Thanks for your message. I'll get back to you soon.</p>
+                                    <span class="text-xs opacity-70 block mt-1">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                </div>
+                            </div>
+                        `);
+                        $('.chat-container').scrollTop($('.chat-container')[0].scrollHeight);
+                    }, 2000);
+                }
             }
         });
         

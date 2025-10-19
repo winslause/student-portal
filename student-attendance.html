@@ -103,6 +103,7 @@
                 position: fixed;
                 z-index: 20;
                 width: 280px;
+                left: 0;
             }
             
             .sidebar.active {
@@ -113,11 +114,12 @@
                 display: none;
                 position: fixed;
                 top: 0;
-                left: 0;
+                left: 280px;
                 right: 0;
                 bottom: 0;
                 background-color: rgba(0, 0, 0, 0.5);
                 z-index: 15;
+                width: calc(100% - 280px);
             }
             
             .overlay.active {
@@ -217,7 +219,7 @@
             <div class="p-4">
                 <div class="mb-8">
                     <div class="flex items-center mb-6">
-                        <div class="w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                        <div class="w-12 h-8 h-12 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
                             AJ
                         </div>
                         <div class="ml-3">
@@ -240,7 +242,7 @@
                 <nav>
                     <ul class="space-y-2">
                         <li>
-                            <a href="index.html.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                            <a href="index.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
                                 <i class="fas fa-home mr-3 text-gray-500"></i>
                                 <span class="text-gray-700">Dashboard</span>
                             </a>
@@ -296,7 +298,7 @@
                             </a>
                         </li>
                         <li>
-                            <a href="student-profile.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                            <a href="student-settings.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
                                 <i class="fas fa-cog mr-3 text-gray-500"></i>
                                 <span class="text-gray-700">Settings</span>
                             </a>
