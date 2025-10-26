@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Management | Phantom University</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --secondary: #10b981;
+            --accent: #f59e0b;
+            --dark: #1e293b;
+            --light: #f8fafc;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        }
+        
+        .sidebar {
+            transition: all 0.3s ease;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .sidebar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb {
+            background: #c5c5c5;
+            border-radius: 3px;
+        }
+        
+        .card-hover {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .progress-bar {
+            height: 8px;
+            border-radius: 4px;
+            background-color: #e2e8f0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .notification-dot {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 12px;
+            height: 12px;
+            background-color: #ef4444;
+            border-radius: 50%;
+        }
+        
+        .sidebar-item.active {
+            background: linear-gradient(to right, #4f46e5, #7c3aed);
+            color: white;
+            border-right: 3px solid white;
+        }
+        
+        .sidebar-item.active i, 
+        .sidebar-item.active span {
+            color: white !important;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .tab-button.active {
+            background-color: #4f46e5;
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                position: fixed;
+                z-index: 20;
+                width: 280px;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 15;
+            }
+            
+            .overlay.active {
+                display: block;
+            }
+        }
+        
+        .badge {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 1rem;
+            font-weight: 500;
+        }
+        
+        .status-active {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-completed {
+            background-color: #e0e7ff;
+            color: #3730a3;
+        }
+        
+        .status-upcoming {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        
+        .course-card {
+            transition: all 0.3s ease;
+        }
+        
+        .course-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .student-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Overlay for mobile -->
+    <div class="overlay"></div>
+    
+    <!-- Main Container -->
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="sidebar w-64 bg-white shadow-lg fixed h-full z-10">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-xl">P</span>
+                    </div>
+                    <h1 class="text-xl font-bold text-gray-800 ml-3">Phantom University</h1>
+                </div>
+            </div>
+            
+            <div class="p-4">
+                <div class="mb-8">
+                    <div class="flex items-center mb-6">
+                        <div class="w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                            SS
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="font-semibold text-gray-800">Dr. Sarah </h3>
+                            <p class="text-sm text-gray-500">Senior Lecturer</p>
+                            <p class="text-xs text-gray-400">Computer Science</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-4 border border-indigo-100">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-medium text-indigo-700">Courses Teaching</span>
+                            <span class="text-sm font-bold text-indigo-700">4</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill bg-gradient-to-r from-indigo-500 to-purple-500" style="width: 80%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <nav>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="index.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-tachometer-alt mr-3"></i>
+                                <span>Dashboard</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="lecturer-courses.html" class="sidebar-item flex items-center p-3 text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg active">
+                                <i class="fas fa-book mr-3"></i>
+                                <span>My Courses</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="lecturer-attendance.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-user-check mr-3"></i>
+                                <span>Attendance</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="lecturer-grading.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-chart-bar mr-3"></i>
+                                <span>Grades</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="lecturer-materials.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-file-upload mr-3"></i>
+                                <span>Resources</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="flex-1 md:ml-64">
+            <!-- Header -->
+            <header class="bg-white shadow-sm py-4 px-6 flex justify-between items-center">
+                <div class="flex items-center">
+                    <button id="menu-toggle" class="md:hidden text-gray-500 focus:outline-none">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    <h2 class="text-xl font-semibold text-gray-800 ml-4">Course Management</h2>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <button class="text-gray-500 focus:outline-none">
+                            <i class="fas fa-bell text-xl"></i>
+                            <span class="notification-dot"></span>
+                        </button>
+                    </div>
+                    <div class="relative">
+                        <button class="flex items-center text-gray-700 focus:outline-none">
+                            <div class="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                                SS
+                            </div>
+                            <span class="ml-2 hidden md:inline">Dr. Sarah </span>
+                            <i class="fas fa-chevron-down ml-1 text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Courses Content -->
+            <main class="p-6">
+                <!-- Header Section -->
+                <div class="mb-8">
+                    <h1 class="text-2xl font-bold text-gray-800">Course Management</h1>
+                    <p class="text-gray-600">Manage your courses, students, and teaching materials</p>
+                </div>
+                
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-gradient-to-br from-white to-blue-50 rounded-xl shadow-sm p-6 card-hover border border-blue-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-book-open text-blue-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Active Courses</h3>
+                                <p class="text-2xl font-bold text-gray-800">4</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-white to-green-50 rounded-xl shadow-sm p-6 card-hover border border-green-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-users text-green-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Total Students</h3>
+                                <p class="text-2xl font-bold text-gray-800">142</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-white to-orange-50 rounded-xl shadow-sm p-6 card-hover border border-orange-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-tasks text-orange-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Active Assignments</h3>
+                                <p class="text-2xl font-bold text-gray-800">8</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-white to-purple-50 rounded-xl shadow-sm p-6 card-hover border border-purple-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-file-alt text-purple-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Resources</h3>
+                                <p class="text-2xl font-bold text-gray-800">24</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tabs Navigation -->
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 mb-6">
+                    <div class="border-b border-gray-200">
+                        <div class="flex overflow-x-auto">
+                            <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-indigo-600 whitespace-nowrap active" data-tab="courses">
+                                My Courses
+                            </button>
+                            <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-indigo-600 whitespace-nowrap" data-tab="students">
+                                Students
+                            </button>
+                            <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-indigo-600 whitespace-nowrap" data-tab="materials">
+                                Teaching Materials
+                            </button>
+                            <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-indigo-600 whitespace-nowrap" data-tab="analytics">
+                                Analytics
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tab Content -->
+                <div>
+                    <!-- My Courses -->
+                    <div class="tab-content active" id="courses">
+                        <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between">
+                            <h3 class="text-lg font-semibold text-gray-800">My Courses - Fall 2025</h3>
+                            <button class="mt-2 md:mt-0 px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                                <i class="fas fa-plus mr-2"></i> Create New Course
+                            </button>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                            <!-- Course Card 1 -->
+                            <div class="course-card bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+                                <div class="p-6">
+                                    <div class="flex items-start justify-between mb-4">
+                                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-laptop-code text-blue-600 text-xl"></i>
+                                        </div>
+                                        <span class="badge status-active">Active</span>
+                                    </div>
+                                    <h3 class="text-xl font-bold text-gray-800 mb-2">CS401 - Web Development</h3>
+                                    <p class="text-gray-600 text-sm mb-4">Advanced web technologies and frameworks including React, Node.js and MongoDB</p>
+                                    
+                                    <div class="grid grid-cols-2 gap-4 mb-4">
+                                        <div class="flex items-center text-sm text-gray-500">
+                                            <i class="fas fa-users mr-2"></i>
+                                            <span>42 Students</span>
+                                        </div>
+                                        <div class="flex items-center text-sm text-gray-500">
+                                            <i class="fas fa-tasks mr-2"></i>
+                                            <span>3 Assignments</span>
+                                        </div>
+                                        <div class="flex items-center text-sm text-gray-500">
+                                            <i class="fas fa-calendar mr-2"></i>
+                                            <span>Mon, Wed 10:00-11:30</span>
+                                        </div>
+                                        <div class="flex items-center text-sm text-gray-500">
+                                            <i class="fas fa-map-marker-alt mr-2"></i>
+                                            <span>CS-102</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-4">
+                                        <div class="flex justify-between mb-1">
+                                            <span class="text-xs text-gray-600">Course Progress</span>
+                                            <span class="text-xs font-medium text-gray-700">65%</span>
+                                        </div>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill bg-blue-600" style="width: 65%"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex space-x-2">
+                                        <button class="flex-1 py-2 bg-blue-600 text-white text-sm rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                                            Manage Course
+                                        </button>
+                                        <button class="px-3 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg font-medium hover:bg-gray-300 transition-colors">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Course Card 2 -->
+                            <div class="course-card bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+                                <div class="p-6">
+                                    <div class="flex items-start justify-between mb-4">
+                                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-database text-green-600 text-xl"></i>
+                                        </div>
+                                        <span class="badge status-active">Active</span>
+                                    </div>
+                                    <h3 class="text-xl font-bold text-gray-800 mb-2">CS402 - Database Systems</h3>
+                                    <p class="text-gray-600 text-sm mb-4">Advanced database design, SQL optimization, and NoSQL databases</p>
+                                    
+                                    <div class="grid grid-cols-2 gap-4 mb-4">
+                                        <div class="flex items-center text-sm text-gray-500">
+                                            <i class="fas fa-users mr-2"></i>
+                                            <span>38 Students</span>
+                                        </div>
+                                        <div class="flex items-center text-sm text-gray-500">
+                                            <i class="fas fa-tasks mr-2"></i>
+                                            <span>2 Assignments</span>
+                                        </div>
+                                        <div class="flex items-center text-sm text-gray-500">
+                                            <i class="fas fa-calendar mr-2"></i>
+                                            <span>Tue, Thu 14:00-15:30</span>
+                                        </div>
+                                        <div class="flex items-center text-sm text-gray-500">
+                                            <i class="fas fa-map-marker-alt mr-2"></i>
+                                            <span>CS-201</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-4">
+                                        <div class="flex justify-between mb-1">
+                                            <span class="text-xs text-gray-600">Course Progress</span>
+                                            <span class="text-xs font-medium text-gray-700">45%</span>
+                                        </div>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill bg-green-600" style="width: 45%"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex space-x-2">
+                                        <button class="flex-1 py-2 bg-green-600 text-white text-sm rounded-lg font-medium hover:bg-green-700 transition-colors">
+                                            Manage Course
+                                        </button>
+                                        <button class="px-3 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg font-medium hover:bg-gray-300 transition-colors">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Course Card 3 -->
+                            <div class="course-card bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+                                <div class="p-6">
+                                    <div class="flex items-start justify-between mb-4">
+                                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-project-diagram text-purple-600 text-xl"></i>
+                                        </div>
+                                        <span class="badge status-active">Active</span>
+                                    </div>
+                                    <h3 class="text-xl font-bold text-gray-800 mb-2">CS403 - Software Engineering</h3>
+                                    <p class="text-gray-600 text-sm mb-4">Software development methodologies, Agile, and project management</p>
+                                    
+                                    <div class="grid grid-cols-2 gap-4 mb-4">
+                                        <div class="flex items-center text-sm text-gray-500">
+                                            <i class="fas fa-users mr-2"></i>
+                                            <span>35 Students</span>
+                                        </div>
+                                        <div class="flex items-center text-sm text-gray-500">
+                                            <i class="fas fa-tasks mr-2"></i>
+                                            <span>4 Assignments</span>
+                                        </div>
+                                        <div class="flex items-center text-sm text-gray-500">
+                                            <i class="fas fa-calendar mr-2"></i>
+                                            <span>Mon, Fri 09:00-10:30</span>
+                                        </div>
+                                        <div class="flex items-center text-sm text-gray-500">
+                                            <i class="fas fa-map-marker-alt mr-2"></i>
+                                            <span>CS-105</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-4">
+                                        <div class="flex justify-between mb-1">
+                                            <span class="text-xs text-gray-600">Course Progress</span>
+                                            <span class="text-xs font-medium text-gray-700">70%</span>
+                                        </div>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill bg-purple-600" style="width: 70%"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex space-x-2">
+                                        <button class="flex-1 py-2 bg-purple-600 text-white text-sm rounded-lg font-medium hover:bg-purple-700 transition-colors">
+                                            Manage Course
+                                        </button>
+                                        <button class="px-3 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg font-medium hover:bg-gray-300 transition-colors">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Course Card 4 -->
+                            <div class="course-card bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+                                <div class="p-6">
+                                    <div class="flex items-start justify-between mb-4">
+                                        <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-mobile-alt text-orange-600 text-xl"></i>
+                                        </div>
+                                        <span class="badge status-upcoming">Starting Soon</span>
+                                    </div>
+                                    <h3 class="text-xl font-bold text-gray-800 mb-2">CS404 - Mobile App Development</h3>
+                                    <p class="text-gray-600 text-sm mb-4">Cross-platform mobile development with React Native and Flutter</p>
+                                    
+                                    <div class="grid grid-cols-2 gap-4 mb-4">
+                                        <div class="flex items-center text-sm text-gray-500">
+                                            <i class="fas fa-users mr-2"></i>
+                                            <span>27 Students</span>
+                                        </div>
+                                        <div class="flex items-center text-sm text-gray-500">
+                                            <i class="fas fa-tasks mr-2"></i>
+                                            <span>0 Assignments</span>
+                                        </div>
+                                        <div class="flex items-center text-sm text-gray-500">
+                                            <i class="fas fa-calendar mr-2"></i>
+                                            <span>Tue, Fri 16:00-17:30</span>
+                                        </div>
+                                        <div class="flex items-center text-sm text-gray-500">
+                                            <i class="fas fa-map-marker-alt mr-2"></i>
+                                            <span>CS-205</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-4">
+                                        <div class="flex justify-between mb-1">
+                                            <span class="text-xs text-gray-600">Course Progress</span>
+                                            <span class="text-xs font-medium text-gray-700">0%</span>
+                                        </div>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill bg-orange-600" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex space-x-2">
+                                        <button class="flex-1 py-2 bg-orange-600 text-white text-sm rounded-lg font-medium hover:bg-orange-700 transition-colors">
+                                            Setup Course
+                                        </button>
+                                        <button class="px-3 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg font-medium hover:bg-gray-300 transition-colors">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Students -->
+                    <div class="tab-content" id="students">
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800">Student Management</h3>
+                            <p class="text-gray-600">View and manage students across your courses</p>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                            <div class="text-center py-12">
+                                <i class="fas fa-users text-gray-400 text-4xl mb-4"></i>
+                                <h4 class="text-lg font-medium text-gray-700">Student Management</h4>
+                                <p class="text-gray-500 mt-2">Student roster and management tools will be displayed here</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Teaching Materials -->
+                    <div class="tab-content" id="materials">
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800">Teaching Materials</h3>
+                            <p class="text-gray-600">Manage course resources, lectures, and materials</p>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                            <div class="text-center py-12">
+                                <i class="fas fa-file-upload text-gray-400 text-4xl mb-4"></i>
+                                <h4 class="text-lg font-medium text-gray-700">Teaching Materials</h4>
+                                <p class="text-gray-500 mt-2">Course resources and teaching materials will be displayed here</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Analytics -->
+                    <div class="tab-content" id="analytics">
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800">Course Analytics</h3>
+                            <p class="text-gray-600">Performance metrics and student engagement analytics</p>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                            <div class="text-center py-12">
+                                <i class="fas fa-chart-bar text-gray-400 text-4xl mb-4"></i>
+                                <h4 class="text-lg font-medium text-gray-700">Course Analytics</h4>
+                                <p class="text-gray-500 mt-2">Detailed analytics and performance reports will be displayed here</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Mobile menu toggle
+        $('#menu-toggle').click(function() {
+            $('.sidebar').toggleClass('active');
+            $('.overlay').toggleClass('active');
+        });
+        
+        // Close sidebar when clicking overlay
+        $('.overlay').click(function() {
+            $('.sidebar').removeClass('active');
+            $('.overlay').removeClass('active');
+        });
+        
+        // Tab functionality
+        $('.tab-button').click(function() {
+            // Remove active class from all tabs
+            $('.tab-button').removeClass('active');
+            
+            // Add active class to clicked tab
+            $(this).addClass('active');
+            
+            // Hide all tab content
+            $('.tab-content').removeClass('active');
+            
+            // Show the selected tab content
+            const tabId = $(this).data('tab');
+            $('#' + tabId).addClass('active');
+        });
+        
+        // Course management buttons
+        $('.course-card button:contains("Manage Course")').click(function() {
+            const courseName = $(this).closest('.course-card').find('h3').text();
+            alert(`Opening management interface for: ${courseName}`);
+        });
+        
+        $('.course-card button:contains("Setup Course")').click(function() {
+            const courseName = $(this).closest('.course-card').find('h3').text();
+            alert(`Starting course setup for: ${courseName}`);
+        });
+        
+        // Create new course
+        $('button:contains("Create New Course")').click(function() {
+            alert('Opening course creation wizard...');
+        });
+        
+        // Simulate loading data
+        $(document).ready(function() {
+            console.log("Lecturer courses page loaded successfully");
+            
+            // Simulate notification count update
+            setTimeout(function() {
+                $('.notification-dot').css('background-color', '#ef4444');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

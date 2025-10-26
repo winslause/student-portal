@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lecturer Dashboard | Phantom University</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --secondary: #10b981;
+            --accent: #f59e0b;
+            --dark: #1e293b;
+            --light: #f8fafc;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        }
+        
+        .sidebar {
+            transition: all 0.3s ease;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .sidebar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb {
+            background: #c5c5c5;
+            border-radius: 3px;
+        }
+        
+        .card-hover {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .progress-bar {
+            height: 8px;
+            border-radius: 4px;
+            background-color: #e2e8f0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .notification-dot {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 12px;
+            height: 12px;
+            background-color: #ef4444;
+            border-radius: 50%;
+        }
+        
+        .sidebar-item.active {
+            background: linear-gradient(to right, #4f46e5, #7c3aed);
+            color: white;
+            border-right: 3px solid white;
+        }
+        
+        .sidebar-item.active i, 
+        .sidebar-item.active span {
+            color: white !important;
+        }
+        
+        .content-section {
+            display: none;
+        }
+        
+        .content-section.active {
+            display: block;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                position: fixed;
+                z-index: 20;
+                width: 280px;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 15;
+            }
+            
+            .overlay.active {
+                display: block;
+            }
+        }
+        
+        .badge {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 1rem;
+            font-weight: 500;
+        }
+        
+        .status-pending {
+            background-color: #fef3c7;
+            color: #d97706;
+        }
+        
+        .status-graded {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-overdue {
+            background-color: #fee2e2;
+            color: #dc2626;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Overlay for mobile -->
+    <div class="overlay"></div>
+    
+    <!-- Main Container -->
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="sidebar w-64 bg-white shadow-lg fixed h-full z-10">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-xl">P</span>
+                    </div>
+                    <h1 class="text-xl font-bold text-gray-800 ml-3">Phantom University</h1>
+                </div>
+            </div>
+            
+            <div class="p-4">
+                <div class="mb-8">
+                    <div class="flex items-center mb-6">
+                        <div class="w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                            SS
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="font-semibold text-gray-800">Dr. Sarah </h3>
+                            <p class="text-sm text-gray-500">Senior Lecturer</p>
+                            <p class="text-xs text-gray-400">Computer Science</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-4 border border-indigo-100">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-medium text-indigo-700">Courses Teaching</span>
+                            <span class="text-sm font-bold text-indigo-700">4</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill bg-gradient-to-r from-indigo-500 to-purple-500" style="width: 80%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <nav>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="index.html" class="sidebar-item flex items-center p-3 text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg active">
+                                <i class="fas fa-tachometer-alt mr-3"></i>
+                                <span>Dashboard</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="lecturer-courses.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-book mr-3"></i>
+                                <span>My Courses</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="lecturer-attendance.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-user-check mr-3"></i>
+                                <span>Attendance</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="lecturer-grading.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-chart-bar mr-3"></i>
+                                <span>Grades</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="lecturer-materials.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-file-upload mr-3"></i>
+                                <span>Resources</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="flex-1 md:ml-64">
+            <!-- Header -->
+            <header class="bg-white shadow-sm py-4 px-6 flex justify-between items-center">
+                <div class="flex items-center">
+                    <button id="menu-toggle" class="md:hidden text-gray-500 focus:outline-none">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    <h2 class="text-xl font-semibold text-gray-800 ml-4">Lecturer Dashboard</h2>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <button class="text-gray-500 focus:outline-none">
+                            <i class="fas fa-bell text-xl"></i>
+                            <span class="notification-dot"></span>
+                        </button>
+                    </div>
+                    <div class="relative">
+                        <button class="flex items-center text-gray-700 focus:outline-none">
+                            <div class="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                                SS
+                            </div>
+                            <span class="ml-2 hidden md:inline">Dr. Sarah </span>
+                            <i class="fas fa-chevron-down ml-1 text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Dashboard Content -->
+            <main class="p-6">
+                <!-- Welcome Section -->
+                <div class="mb-8">
+                    <h1 class="text-2xl font-bold text-gray-800">Welcome back, Dr. !</h1>
+                    <p class="text-gray-600">Here's your teaching overview for today.</p>
+                </div>
+                
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-gradient-to-br from-white to-blue-50 rounded-xl shadow-sm p-6 card-hover border border-blue-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-book-open text-blue-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Active Courses</h3>
+                                <p class="text-2xl font-bold text-gray-800">4</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-white to-orange-50 rounded-xl shadow-sm p-6 card-hover border border-orange-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-tasks text-orange-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Pending Grading</h3>
+                                <p class="text-2xl font-bold text-gray-800">12</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-white to-green-50 rounded-xl shadow-sm p-6 card-hover border border-green-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-users text-green-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Total Students</h3>
+                                <p class="text-2xl font-bold text-gray-800">142</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-white to-purple-50 rounded-xl shadow-sm p-6 card-hover border border-purple-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-calendar-day text-purple-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Classes Today</h3>
+                                <p class="text-2xl font-bold text-gray-800">2</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Left Column -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <!-- Today's Schedule -->
+                        <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+                            <div class="border-b border-gray-200 px-6 py-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Today's Teaching Schedule</h3>
+                            </div>
+                            <div class="p-6">
+                                <div class="space-y-4">
+                                    <div class="flex items-start p-4 border border-gray-200 rounded-lg">
+                                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-laptop-code text-blue-600"></i>
+                                        </div>
+                                        <div class="ml-4 flex-1">
+                                            <div class="flex justify-between items-start">
+                                                <div>
+                                                    <h4 class="font-medium text-gray-800">Web Development</h4>
+                                                    <p class="text-sm text-gray-600">10:00 AM - 11:30 AM</p>
+                                                    <p class="text-sm text-gray-600">Room: CS-102 | 42 Students</p>
+                                                </div>
+                                                <span class="badge status-pending">In Progress</span>
+                                            </div>
+                                            <div class="mt-2 flex space-x-2">
+                                                <button class="px-3 py-1 bg-blue-100 text-blue-700 text-xs rounded-lg font-medium hover:bg-blue-200 transition-colors">
+                                                    Take Attendance
+                                                </button>
+                                                <button class="px-3 py-1 bg-green-100 text-green-700 text-xs rounded-lg font-medium hover:bg-green-200 transition-colors">
+                                                    Upload Materials
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex items-start p-4 border border-gray-200 rounded-lg">
+                                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-database text-green-600"></i>
+                                        </div>
+                                        <div class="ml-4 flex-1">
+                                            <div class="flex justify-between items-start">
+                                                <div>
+                                                    <h4 class="font-medium text-gray-800">Database Systems</h4>
+                                                    <p class="text-sm text-gray-600">02:00 PM - 03:30 PM</p>
+                                                    <p class="text-sm text-gray-600">Room: CS-201 | 38 Students</p>
+                                                </div>
+                                                <span class="badge">Upcoming</span>
+                                            </div>
+                                            <div class="mt-2 flex space-x-2">
+                                                <button class="px-3 py-1 bg-blue-100 text-blue-700 text-xs rounded-lg font-medium hover:bg-blue-200 transition-colors">
+                                                    Prepare Materials
+                                                </button>
+                                                <button class="px-3 py-1 bg-purple-100 text-purple-700 text-xs rounded-lg font-medium hover:bg-purple-200 transition-colors">
+                                                    View Roster
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <button class="w-full mt-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+                                    View Full Timetable
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Pending Actions -->
+                        <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+                            <div class="border-b border-gray-200 px-6 py-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Pending Actions</h3>
+                            </div>
+                            <div class="p-6">
+                                <div class="space-y-4">
+                                    <div class="flex items-center justify-between p-4 bg-orange-50 rounded-lg border border-orange-200">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-tasks text-orange-600"></i>
+                                            </div>
+                                            <div class="ml-4">
+                                                <h4 class="font-medium text-orange-800">Grade Assignments</h4>
+                                                <p class="text-sm text-orange-700">12 submissions awaiting grading</p>
+                                            </div>
+                                        </div>
+                                        <button class="px-4 py-2 bg-orange-600 text-white text-sm rounded-lg font-medium hover:bg-orange-700 transition-colors">
+                                            Grade Now
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-user-check text-blue-600"></i>
+                                            </div>
+                                            <div class="ml-4">
+                                                <h4 class="font-medium text-blue-800">Update Attendance</h4>
+                                                <p class="text-sm text-blue-700">3 classes with pending attendance records</p>
+                                            </div>
+                                        </div>
+                                        <button class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                                            Update Now
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="flex items-center justify-between p-4 bg-red-50 rounded-lg border border-red-200">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-exclamation-triangle text-red-600"></i>
+                                            </div>
+                                            <div class="ml-4">
+                                                <h4 class="font-medium text-red-800">Overdue Tasks</h4>
+                                                <p class="text-sm text-red-700">2 tasks past their deadline</p>
+                                            </div>
+                                        </div>
+                                        <button class="px-4 py-2 bg-red-600 text-white text-sm rounded-lg font-medium hover:bg-red-700 transition-colors">
+                                            Review
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Column -->
+                    <div class="space-y-6">
+                        <!-- Quick Actions -->
+                        <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+                            <div class="border-b border-gray-200 px-6 py-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Quick Actions</h3>
+                            </div>
+                            <div class="p-6">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <a href="#" class="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors border border-gray-200">
+                                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mb-2">
+                                            <i class="fas fa-plus text-blue-600"></i>
+                                        </div>
+                                        <span class="text-sm font-medium text-gray-700 text-center">Create Assignment</span>
+                                    </a>
+                                    
+                                    <a href="#" class="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors border border-gray-200">
+                                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mb-2">
+                                            <i class="fas fa-upload text-green-600"></i>
+                                        </div>
+                                        <span class="text-sm font-medium text-gray-700 text-center">Upload Materials</span>
+                                    </a>
+                                    
+                                    <a href="#" class="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors border border-gray-200">
+                                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mb-2">
+                                            <i class="fas fa-chart-bar text-purple-600"></i>
+                                        </div>
+                                        <span class="text-sm font-medium text-gray-700 text-center">View Reports</span>
+                                    </a>
+                                    
+                                    <a href="#" class="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors border border-gray-200">
+                                        <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mb-2">
+                                            <i class="fas fa-comments text-orange-600"></i>
+                                        </div>
+                                        <span class="text-sm font-medium text-gray-700 text-center">Student Messages</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Recent Announcements -->
+                        <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+                            <div class="border-b border-gray-200 px-6 py-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Recent Announcements</h3>
+                            </div>
+                            <div class="p-6">
+                                <div class="space-y-4">
+                                    <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                        <div class="flex justify-between">
+                                            <h4 class="font-medium text-blue-800">Department Meeting</h4>
+                                            <span class="text-xs text-blue-600">Tomorrow</span>
+                                        </div>
+                                        <p class="text-sm text-blue-700 mt-1">Quarterly department meeting scheduled for tomorrow at 3 PM in Conference Room A.</p>
+                                    </div>
+                                    
+                                    <div class="p-4 bg-green-50 rounded-lg border border-green-200">
+                                        <div class="flex justify-between">
+                                            <h4 class="font-medium text-green-800">Research Grant Deadline</h4>
+                                            <span class="text-xs text-green-600">5 days</span>
+                                        </div>
+                                        <p class="text-sm text-green-700 mt-1">University research grant applications due by end of next week.</p>
+                                    </div>
+                                    
+                                    <div class="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                                        <div class="flex justify-between">
+                                            <h4 class="font-medium text-purple-800">Exam Schedule Finalized</h4>
+                                            <span class="text-xs text-purple-600">1 week ago</span>
+                                        </div>
+                                        <p class="text-sm text-purple-700 mt-1">Final exam schedule for Semester 2 has been published.</p>
+                                    </div>
+                                </div>
+                                
+                                <button class="w-full mt-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+                                    View All Announcements
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Student Performance -->
+                        <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+                            <div class="border-b border-gray-200 px-6 py-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Student Performance</h3>
+                            </div>
+                            <div class="p-6">
+                                <div class="space-y-4">
+                                    <div>
+                                        <div class="flex justify-between mb-1">
+                                            <span class="text-sm font-medium text-gray-700">Web Development</span>
+                                            <span class="text-sm font-medium text-gray-700">78% Avg</span>
+                                        </div>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill bg-blue-600" style="width: 78%"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <div class="flex justify-between mb-1">
+                                            <span class="text-sm font-medium text-gray-700">Database Systems</span>
+                                            <span class="text-sm font-medium text-gray-700">82% Avg</span>
+                                        </div>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill bg-green-600" style="width: 82%"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <div class="flex justify-between mb-1">
+                                            <span class="text-sm font-medium text-gray-700">Software Engineering</span>
+                                            <span class="text-sm font-medium text-gray-700">75% Avg</span>
+                                        </div>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill bg-purple-600" style="width: 75%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <button class="w-full mt-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                                    View Detailed Reports
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Upcoming Deadlines -->
+                <div class="mt-8 bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+                    <div class="border-b border-gray-200 px-6 py-4">
+                        <h3 class="text-lg font-semibold text-gray-800">Upcoming Deadlines</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignment</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submissions</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200">
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">CS401</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">Web Development Project</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">28 Oct 2025</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">38/42</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="badge status-pending">Active</span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                            <button class="text-indigo-600 hover:text-indigo-900">View Submissions</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">CS402</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">Database Design</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">30 Oct 2025</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">12/38</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="badge status-pending">Active</span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                            <button class="text-indigo-600 hover:text-indigo-900">View Submissions</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">CS403</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">SRS Document</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">5 Nov 2025</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">0/35</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="badge status-pending">Active</span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                            <button class="text-indigo-600 hover:text-indigo-900">View Details</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Mobile menu toggle
+        $('#menu-toggle').click(function() {
+            $('.sidebar').toggleClass('active');
+            $('.overlay').toggleClass('active');
+        });
+        
+        // Close sidebar when clicking overlay
+        $('.overlay').click(function() {
+            $('.sidebar').removeClass('active');
+            $('.overlay').removeClass('active');
+        });
+        
+        // Quick action buttons
+        $('.bg-gray-50').click(function() {
+            const action = $(this).find('span').text();
+            alert(`Navigating to ${action}...`);
+        });
+        
+        // Pending action buttons
+        $('.bg-orange-50 button, .bg-blue-50 button, .bg-red-50 button').click(function() {
+            const action = $(this).closest('.bg-orange-50, .bg-blue-50, .bg-red-50').find('h4').text();
+            alert(`Opening ${action} interface...`);
+        });
+        
+        // Table action buttons
+        $('table button').click(function() {
+            const assignment = $(this).closest('tr').find('td:nth-child(2)').text();
+            alert(`Viewing submissions for: ${assignment}`);
+        });
+        
+        // Simulate loading data
+        $(document).ready(function() {
+            console.log("Lecturer dashboard loaded successfully");
+            
+            // Simulate notification count update
+            setTimeout(function() {
+                $('.notification-dot').css('background-color', '#ef4444');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

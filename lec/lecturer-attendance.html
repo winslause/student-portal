@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Management | Phantom University</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --secondary: #10b981;
+            --accent: #f59e0b;
+            --dark: #1e293b;
+            --light: #f8fafc;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        }
+        
+        .sidebar {
+            transition: all 0.3s ease;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .sidebar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb {
+            background: #c5c5c5;
+            border-radius: 3px;
+        }
+        
+        .card-hover {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .progress-bar {
+            height: 8px;
+            border-radius: 4px;
+            background-color: #e2e8f0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .notification-dot {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 12px;
+            height: 12px;
+            background-color: #ef4444;
+            border-radius: 50%;
+        }
+        
+        .sidebar-item.active {
+            background: linear-gradient(to right, #4f46e5, #7c3aed);
+            color: white;
+            border-right: 3px solid white;
+        }
+        
+        .sidebar-item.active i, 
+        .sidebar-item.active span {
+            color: white !important;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .tab-button.active {
+            background-color: #4f46e5;
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                position: fixed;
+                z-index: 20;
+                width: 280px;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 15;
+            }
+            
+            .overlay.active {
+                display: block;
+            }
+        }
+        
+        .badge {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 1rem;
+            font-weight: 500;
+        }
+        
+        .status-present {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-absent {
+            background-color: #fee2e2;
+            color: #dc2626;
+        }
+        
+        .status-late {
+            background-color: #fef3c7;
+            color: #d97706;
+        }
+        
+        .status-excused {
+            background-color: #e0e7ff;
+            color: #3730a3;
+        }
+        
+        .attendance-card {
+            transition: all 0.3s ease;
+        }
+        
+        .attendance-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .attendance-toggle {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #d1d5db;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .attendance-toggle.present {
+            background-color: #10b981;
+            border-color: #10b981;
+        }
+        
+        .attendance-toggle.absent {
+            background-color: #ef4444;
+            border-color: #ef4444;
+        }
+        
+        .attendance-toggle.late {
+            background-color: #f59e0b;
+            border-color: #f59e0b;
+        }
+        
+        .attendance-toggle.excused {
+            background-color: #8b5cf6;
+            border-color: #8b5cf6;
+        }
+        
+        .student-row:hover {
+            background-color: #f9fafb;
+        }
+        
+        .qr-scanner {
+            width: 300px;
+            height: 300px;
+            border: 3px dashed #d1d5db;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            background-color: #f9fafb;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Overlay for mobile -->
+    <div class="overlay"></div>
+    
+    <!-- Main Container -->
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="sidebar w-64 bg-white shadow-lg fixed h-full z-10">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-xl">P</span>
+                    </div>
+                    <h1 class="text-xl font-bold text-gray-800 ml-3">Phantom University</h1>
+                </div>
+            </div>
+            
+            <div class="p-4">
+                <div class="mb-8">
+                    <div class="flex items-center mb-6">
+                        <div class="w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                            SS
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="font-semibold text-gray-800">Dr. Sarah </h3>
+                            <p class="text-sm text-gray-500">Senior Lecturer</p>
+                            <p class="text-xs text-gray-400">Computer Science</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-4 border border-indigo-100">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-medium text-indigo-700">Courses Teaching</span>
+                            <span class="text-sm font-bold text-indigo-700">4</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill bg-gradient-to-r from-indigo-500 to-purple-500" style="width: 80%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <nav>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="index.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-tachometer-alt mr-3"></i>
+                                <span>Dashboard</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="lecturer-courses.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-book mr-3"></i>
+                                <span>My Courses</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="lecturer-attendance.html" class="sidebar-item flex items-center p-3 text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg active">
+                                <i class="fas fa-user-check mr-3"></i>
+                                <span>Attendance</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="lecturer-grading.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-chart-bar mr-3"></i>
+                                <span>Grades</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="lecturer-materials.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-file-upload mr-3"></i>
+                                <span>Resources</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="flex-1 md:ml-64">
+            <!-- Header -->
+            <header class="bg-white shadow-sm py-4 px-6 flex justify-between items-center">
+                <div class="flex items-center">
+                    <button id="menu-toggle" class="md:hidden text-gray-500 focus:outline-none">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    <h2 class="text-xl font-semibold text-gray-800 ml-4">Attendance Management</h2>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <button class="text-gray-500 focus:outline-none">
+                            <i class="fas fa-bell text-xl"></i>
+                            <span class="notification-dot"></span>
+                        </button>
+                    </div>
+                    <div class="relative">
+                        <button class="flex items-center text-gray-700 focus:outline-none">
+                            <div class="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                                SS
+                            </div>
+                            <span class="ml-2 hidden md:inline">Dr. Sarah </span>
+                            <i class="fas fa-chevron-down ml-1 text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Attendance Content -->
+            <main class="p-6">
+                <!-- Header Section -->
+                <div class="mb-8">
+                    <h1 class="text-2xl font-bold text-gray-800">Attendance Management</h1>
+                    <p class="text-gray-600">Record and manage student attendance for your classes</p>
+                </div>
+                
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-gradient-to-br from-white to-green-50 rounded-xl shadow-sm p-6 card-hover border border-green-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-user-check text-green-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Today's Attendance</h3>
+                                <p class="text-2xl font-bold text-gray-800">84%</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-white to-blue-50 rounded-xl shadow-sm p-6 card-hover border border-blue-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-calendar-check text-blue-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Classes Today</h3>
+                                <p class="text-2xl font-bold text-gray-800">2</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-white to-red-50 rounded-xl shadow-sm p-6 card-hover border border-red-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-user-times text-red-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Absent Today</h3>
+                                <p class="text-2xl font-bold text-gray-800">8</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-white to-orange-50 rounded-xl shadow-sm p-6 card-hover border border-orange-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-clock text-orange-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Late Arrivals</h3>
+                                <p class="text-2xl font-bold text-gray-800">3</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tabs Navigation -->
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 mb-6">
+                    <div class="border-b border-gray-200">
+                        <div class="flex overflow-x-auto">
+                            <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-indigo-600 whitespace-nowrap active" data-tab="record">
+                                Record Attendance
+                            </button>
+                            <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-indigo-600 whitespace-nowrap" data-tab="view">
+                                View Records
+                            </button>
+                            <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-indigo-600 whitespace-nowrap" data-tab="reports">
+                                Reports
+                            </button>
+                            <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-indigo-600 whitespace-nowrap" data-tab="settings">
+                                Settings
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tab Content -->
+                <div>
+                    <!-- Record Attendance -->
+                    <div class="tab-content active" id="record">
+                        <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between">
+                            <h3 class="text-lg font-semibold text-gray-800">Record Today's Attendance</h3>
+                            <div class="mt-2 md:mt-0 flex space-x-2">
+                                <button class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg font-medium hover:bg-green-700 transition-colors">
+                                    <i class="fas fa-save mr-2"></i> Save Attendance
+                                </button>
+                                <button class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                                    <i class="fas fa-qrcode mr-2"></i> QR Scan
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+                            <!-- Class Selection -->
+                            <div class="lg:col-span-1 bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                                <h4 class="text-lg font-semibold text-gray-800 mb-4">Select Class</h4>
+                                
+                                <div class="space-y-3">
+                                    <div class="p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-indigo-300 hover:bg-indigo-50 transition-colors">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-laptop-code text-blue-600"></i>
+                                            </div>
+                                            <div class="ml-3">
+                                                <h5 class="font-medium text-gray-800">Web Development</h5>
+                                                <p class="text-xs text-gray-600">10:00 AM - CS-102</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="p-3 border border-indigo-300 rounded-lg cursor-pointer bg-indigo-50">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-database text-green-600"></i>
+                                            </div>
+                                            <div class="ml-3">
+                                                <h5 class="font-medium text-gray-800">Database Systems</h5>
+                                                <p class="text-xs text-gray-600">02:00 PM - CS-201</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-indigo-300 hover:bg-indigo-50 transition-colors">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-project-diagram text-purple-600"></i>
+                                            </div>
+                                            <div class="ml-3">
+                                                <h5 class="font-medium text-gray-800">Software Engineering</h5>
+                                                <p class="text-xs text-gray-600">09:00 AM - CS-105</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-6 pt-4 border-t border-gray-200">
+                                    <h5 class="text-sm font-medium text-gray-700 mb-2">Attendance Date</h5>
+                                    <input type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" value="2025-10-26">
+                                </div>
+                            </div>
+                            
+                            <!-- Attendance Recording -->
+                            <div class="lg:col-span-3 bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+                                <div class="p-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h4 class="text-lg font-semibold text-gray-800">Database Systems - Attendance</h4>
+                                            <p class="text-sm text-gray-600">CS-201 | 38 Students | 26 Oct 2025, 02:00 PM</p>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-sm text-gray-600">Mark All:</span>
+                                            <button class="px-3 py-1 bg-green-100 text-green-700 text-xs rounded-lg font-medium hover:bg-green-200 transition-colors">
+                                                Present
+                                            </button>
+                                            <button class="px-3 py-1 bg-red-100 text-red-700 text-xs rounded-lg font-medium hover:bg-red-200 transition-colors">
+                                                Absent
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="overflow-x-auto">
+                                    <table class="w-full">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-gray-200">
+                                            <!-- Student 1 -->
+                                            <tr class="student-row">
+                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                    <div class="flex items-center">
+                                                        <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-semibold text-sm">
+                                                            AJ
+                                                        </div>
+                                                        <div class="ml-3">
+                                                            <div class="text-sm font-medium text-gray-900">Alex Johnson</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">PU/CS/2021/0012</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                    <span class="badge status-present">Present</span>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                    <div class="flex justify-center space-x-2">
+                                                        <div class="attendance-toggle present" data-status="present"></div>
+                                                        <div class="attendance-toggle absent" data-status="absent"></div>
+                                                        <div class="attendance-toggle late" data-status="late"></div>
+                                                        <div class="attendance-toggle excused" data-status="excused"></div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            
+                                            <!-- Student 2 -->
+                                            <tr class="student-row">
+                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                    <div class="flex items-center">
+                                                        <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-semibold text-sm">
+                                                            MJ
+                                                        </div>
+                                                        <div class="ml-3">
+                                                            <div class="text-sm font-medium text-gray-900">Maria Johnson</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">PU/CS/2021/0025</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                    <span class="badge status-present">Present</span>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                    <div class="flex justify-center space-x-2">
+                                                        <div class="attendance-toggle present" data-status="present"></div>
+                                                        <div class="attendance-toggle absent" data-status="absent"></div>
+                                                        <div class="attendance-toggle late" data-status="late"></div>
+                                                        <div class="attendance-toggle excused" data-status="excused"></div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            
+                                            <!-- Student 3 -->
+                                            <tr class="student-row">
+                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                    <div class="flex items-center">
+                                                        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold text-sm">
+                                                            RK
+                                                        </div>
+                                                        <div class="ml-3">
+                                                            <div class="text-sm font-medium text-gray-900">Robert Kimani</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">PU/CS/2021/0038</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                    <span class="badge status-late">Late</span>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                    <div class="flex justify-center space-x-2">
+                                                        <div class="attendance-toggle present" data-status="present"></div>
+                                                        <div class="attendance-toggle absent" data-status="absent"></div>
+                                                        <div class="attendance-toggle late" data-status="late"></div>
+                                                        <div class="attendance-toggle excused" data-status="excused"></div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            
+                                            <!-- Student 4 -->
+                                            <tr class="student-row">
+                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                    <div class="flex items-center">
+                                                        <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-semibold text-sm">
+                                                            SN
+                                                        </div>
+                                                        <div class="ml-3">
+                                                            <div class="text-sm font-medium text-gray-900">Susan Njoroge</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">PU/CS/2021/0042</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                    <span class="badge status-absent">Absent</span>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                    <div class="flex justify-center space-x-2">
+                                                        <div class="attendance-toggle present" data-status="present"></div>
+                                                        <div class="attendance-toggle absent" data-status="absent"></div>
+                                                        <div class="attendance-toggle late" data-status="late"></div>
+                                                        <div class="attendance-toggle excused" data-status="excused"></div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            
+                                            <!-- Student 5 -->
+                                            <tr class="student-row">
+                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                    <div class="flex items-center">
+                                                        <div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 font-semibold text-sm">
+                                                            DM
+                                                        </div>
+                                                        <div class="ml-3">
+                                                            <div class="text-sm font-medium text-gray-900">David Mwangi</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">PU/CS/2021/0051</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                    <span class="badge status-excused">Excused</span>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                    <div class="flex justify-center space-x-2">
+                                                        <div class="attendance-toggle present" data-status="present"></div>
+                                                        <div class="attendance-toggle absent" data-status="absent"></div>
+                                                        <div class="attendance-toggle late" data-status="late"></div>
+                                                        <div class="attendance-toggle excused" data-status="excused"></div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <div class="p-4 border-t border-gray-200 bg-gray-50">
+                                    <div class="flex justify-between items-center">
+                                        <div class="text-sm text-gray-600">
+                                            <span class="font-medium">Summary:</span> 32 Present, 3 Absent, 2 Late, 1 Excused
+                                        </div>
+                                        <button class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                                            <i class="fas fa-paper-plane mr-2"></i> Submit Attendance
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- QR Scanner Section -->
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 mt-6">
+                            <h4 class="text-lg font-semibold text-gray-800 mb-4">Quick Attendance - QR Code Scanner</h4>
+                            <div class="flex flex-col md:flex-row items-center justify-between">
+                                <div class="qr-scanner mb-4 md:mb-0">
+                                    <i class="fas fa-qrcode text-gray-400 text-6xl mb-4"></i>
+                                    <p class="text-gray-500 text-sm">Position QR code within frame</p>
+                                    <p class="text-gray-400 text-xs mt-2">Camera access required</p>
+                                </div>
+                                <div class="md:ml-6 text-center md:text-left">
+                                    <h5 class="font-medium text-gray-800 mb-2">QR Attendance Instructions</h5>
+                                    <ul class="text-sm text-gray-600 space-y-1">
+                                        <li>• Students scan QR code when entering class</li>
+                                        <li>• Automatic attendance marking</li>
+                                        <li>• Real-time updates</li>
+                                        <li>• Manual override available</li>
+                                    </ul>
+                                    <button class="mt-4 px-4 py-2 bg-green-600 text-white text-sm rounded-lg font-medium hover:bg-green-700 transition-colors">
+                                        <i class="fas fa-camera mr-2"></i> Start QR Scanner
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- View Records -->
+                    <div class="tab-content" id="view">
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800">Attendance Records</h3>
+                            <p class="text-gray-600">View and manage historical attendance data</p>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                            <div class="text-center py-12">
+                                <i class="fas fa-calendar-alt text-gray-400 text-4xl mb-4"></i>
+                                <h4 class="text-lg font-medium text-gray-700">Attendance Records</h4>
+                                <p class="text-gray-500 mt-2">Historical attendance records and analytics will be displayed here</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Reports -->
+                    <div class="tab-content" id="reports">
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800">Attendance Reports</h3>
+                            <p class="text-gray-600">Generate and view attendance reports and analytics</p>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                            <div class="text-center py-12">
+                                <i class="fas fa-chart-bar text-gray-400 text-4xl mb-4"></i>
+                                <h4 class="text-lg font-medium text-gray-700">Attendance Reports</h4>
+                                <p class="text-gray-500 mt-2">Detailed attendance reports and analytics will be displayed here</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Settings -->
+                    <div class="tab-content" id="settings">
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800">Attendance Settings</h3>
+                            <p class="text-gray-600">Configure attendance recording preferences</p>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                            <div class="text-center py-12">
+                                <i class="fas fa-cog text-gray-400 text-4xl mb-4"></i>
+                                <h4 class="text-lg font-medium text-gray-700">Attendance Settings</h4>
+                                <p class="text-gray-500 mt-2">Attendance system configuration and settings will be displayed here</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Mobile menu toggle
+        $('#menu-toggle').click(function() {
+            $('.sidebar').toggleClass('active');
+            $('.overlay').toggleClass('active');
+        });
+        
+        // Close sidebar when clicking overlay
+        $('.overlay').click(function() {
+            $('.sidebar').removeClass('active');
+            $('.overlay').removeClass('active');
+        });
+        
+        // Tab functionality
+        $('.tab-button').click(function() {
+            // Remove active class from all tabs
+            $('.tab-button').removeClass('active');
+            
+            // Add active class to clicked tab
+            $(this).addClass('active');
+            
+            // Hide all tab content
+            $('.tab-content').removeClass('active');
+            
+            // Show the selected tab content
+            const tabId = $(this).data('tab');
+            $('#' + tabId).addClass('active');
+        });
+        
+        // Class selection
+        $('.p-3.border').click(function() {
+            $('.p-3.border').removeClass('border-indigo-300 bg-indigo-50');
+            $(this).addClass('border-indigo-300 bg-indigo-50');
+        });
+        
+        // Attendance toggle functionality
+        $('.attendance-toggle').click(function() {
+            const status = $(this).data('status');
+            const row = $(this).closest('tr');
+            const badge = row.find('.badge');
+            
+            // Update badge
+            badge.removeClass('status-present status-absent status-late status-excused');
+            badge.addClass(`status-${status}`);
+            badge.text(status.charAt(0).toUpperCase() + status.slice(1));
+            
+            // Update toggle visual
+            $(this).siblings().removeClass('present absent late excused');
+            $(this).addClass(status);
+        });
+        
+        // Mark all buttons
+        $('button:contains("Present")').click(function() {
+            if ($(this).text() === 'Present') {
+                $('.attendance-toggle[data-status="present"]').click();
+            }
+        });
+        
+        $('button:contains("Absent")').click(function() {
+            if ($(this).text() === 'Absent') {
+                $('.attendance-toggle[data-status="absent"]').click();
+            }
+        });
+        
+        // Save attendance
+        $('button:contains("Save Attendance")').click(function() {
+            alert('Attendance data saved successfully!');
+        });
+        
+        // Submit attendance
+        $('button:contains("Submit Attendance")').click(function() {
+            alert('Attendance submitted for Database Systems class!');
+        });
+        
+        // QR Scanner
+        $('button:contains("QR Scan")').click(function() {
+            alert('Opening QR code scanner...');
+        });
+        
+        $('button:contains("Start QR Scanner")').click(function() {
+            alert('Initializing camera for QR code scanning...');
+        });
+        
+        // Simulate loading data
+        $(document).ready(function() {
+            console.log("Lecturer attendance page loaded successfully");
+            
+            // Simulate notification count update
+            setTimeout(function() {
+                $('.notification-dot').css('background-color', '#ef4444');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

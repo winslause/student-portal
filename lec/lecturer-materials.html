@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Materials | Phantom University</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --secondary: #10b981;
+            --accent: #f59e0b;
+            --dark: #1e293b;
+            --light: #f8fafc;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        }
+        
+        .sidebar {
+            transition: all 0.3s ease;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .sidebar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb {
+            background: #c5c5c5;
+            border-radius: 3px;
+        }
+        
+        .card-hover {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .progress-bar {
+            height: 8px;
+            border-radius: 4px;
+            background-color: #e2e8f0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .notification-dot {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 12px;
+            height: 12px;
+            background-color: #ef4444;
+            border-radius: 50%;
+        }
+        
+        .sidebar-item.active {
+            background: linear-gradient(to right, #4f46e5, #7c3aed);
+            color: white;
+            border-right: 3px solid white;
+        }
+        
+        .sidebar-item.active i, 
+        .sidebar-item.active span {
+            color: white !important;
+        }
+        
+        .content-section {
+            display: none;
+        }
+        
+        .content-section.active {
+            display: block;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                position: fixed;
+                z-index: 20;
+                width: 280px;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 15;
+            }
+            
+            .overlay.active {
+                display: block;
+            }
+        }
+        
+        .badge {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 1rem;
+            font-weight: 500;
+        }
+        
+        .status-pending {
+            background-color: #fef3c7;
+            color: #d97706;
+        }
+        
+        .status-published {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-draft {
+            background-color: #e0e7ff;
+            color: #3730a3;
+        }
+        
+        .file-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        
+        .file-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-left-color: #4f46e5;
+        }
+        
+        .file-type-doc { border-left-color: #3b82f6; }
+        .file-type-pdf { border-left-color: #ef4444; }
+        .file-type-video { border-left-color: #8b5cf6; }
+        .file-type-zip { border-left-color: #f59e0b; }
+        .file-type-img { border-left-color: #10b981; }
+        
+        .upload-dropzone {
+            border: 2px dashed #d1d5db;
+            border-radius: 0.75rem;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-dropzone.active {
+            border-color: #4f46e5;
+            background-color: #eef2ff;
+        }
+        
+        .folder-card {
+            transition: all 0.3s ease;
+        }
+        
+        .folder-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Overlay for mobile -->
+    <div class="overlay"></div>
+    
+    <!-- Main Container -->
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="sidebar w-64 bg-white shadow-lg fixed h-full z-10">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-xl">P</span>
+                    </div>
+                    <h1 class="text-xl font-bold text-gray-800 ml-3">Phantom University</h1>
+                </div>
+            </div>
+            
+            <div class="p-4">
+                <div class="mb-8">
+                    <div class="flex items-center mb-6">
+                        <div class="w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                            SS
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="font-semibold text-gray-800">Dr. Sarah </h3>
+                            <p class="text-sm text-gray-500">Senior Lecturer</p>
+                            <p class="text-xs text-gray-400">Computer Science</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-4 border border-indigo-100">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-medium text-indigo-700">Storage Used</span>
+                            <span class="text-sm font-bold text-indigo-700">2.4/5 GB</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill bg-gradient-to-r from-indigo-500 to-purple-500" style="width: 48%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <nav>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="index.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-tachometer-alt mr-3"></i>
+                                <span>Dashboard</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="lecturer-courses.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-book mr-3"></i>
+                                <span>My Courses</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="lecturer-attendance.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-user-check mr-3"></i>
+                                <span>Attendance</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="lecturer-grading.html" class="sidebar-item flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-chart-bar mr-3"></i>
+                                <span>Grades</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="lecturer-materials.html" class="sidebar-item flex items-center p-3 text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg active">
+                                <i class="fas fa-file-upload mr-3"></i>
+                                <span>Resources</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="flex-1 md:ml-64">
+            <!-- Header -->
+            <header class="bg-white shadow-sm py-4 px-6 flex justify-between items-center">
+                <div class="flex items-center">
+                    <button id="menu-toggle" class="md:hidden text-gray-500 focus:outline-none">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    <h2 class="text-xl font-semibold text-gray-800 ml-4">Course Materials</h2>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <button class="text-gray-500 focus:outline-none">
+                            <i class="fas fa-bell text-xl"></i>
+                            <span class="notification-dot"></span>
+                        </button>
+                    </div>
+                    <div class="relative">
+                        <button class="flex items-center text-gray-700 focus:outline-none">
+                            <div class="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                                SS
+                            </div>
+                            <span class="ml-2 hidden md:inline">Dr. Sarah </span>
+                            <i class="fas fa-chevron-down ml-1 text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Materials Content -->
+            <main class="p-6">
+                <!-- Page Header -->
+                <div class="mb-8">
+                    <h1 class="text-2xl font-bold text-gray-800">Course Materials & Resources</h1>
+                    <p class="text-gray-600">Upload and manage teaching materials for your courses.</p>
+                </div>
+                
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-gradient-to-br from-white to-blue-50 rounded-xl shadow-sm p-6 card-hover border border-blue-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-folder text-blue-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Total Materials</h3>
+                                <p class="text-2xl font-bold text-gray-800">47</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-white to-orange-50 rounded-xl shadow-sm p-6 card-hover border border-orange-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-file-pdf text-orange-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">PDF Files</h3>
+                                <p class="text-2xl font-bold text-gray-800">18</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-white to-green-50 rounded-xl shadow-sm p-6 card-hover border border-green-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-file-video text-green-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Videos</h3>
+                                <p class="text-2xl font-bold text-gray-800">9</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-white to-purple-50 rounded-xl shadow-sm p-6 card-hover border border-purple-100">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-database text-purple-600 text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-sm font-medium text-gray-500">Storage Used</h3>
+                                <p class="text-2xl font-bold text-gray-800">2.4 GB</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Left Column -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <!-- Upload Section -->
+                        <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+                            <div class="border-b border-gray-200 px-6 py-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Upload New Materials</h3>
+                            </div>
+                            <div class="p-6">
+                                <!-- File Upload Dropzone -->
+                                <div class="upload-dropzone p-8 text-center mb-6" id="upload-dropzone">
+                                    <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                                    <h4 class="text-lg font-medium text-gray-700 mb-2">Drag & Drop Files Here</h4>
+                                    <p class="text-gray-500 mb-4">or click to browse your computer</p>
+                                    <input type="file" id="file-input" class="hidden" multiple>
+                                    <button class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors" id="browse-btn">
+                                        Browse Files
+                                    </button>
+                                    <p class="text-xs text-gray-400 mt-3">Supports PDF, DOC, PPT, ZIP, MP4, and images up to 100MB each</p>
+                                </div>
+                                
+                                <!-- Upload Form -->
+                                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                    <h4 class="font-medium text-gray-800 mb-3">File Details</h4>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Course</label>
+                                            <select class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                                <option>Select a course</option>
+                                                <option>CS401 - Web Development</option>
+                                                <option>CS402 - Database Systems</option>
+                                                <option>CS403 - Software Engineering</option>
+                                                <option>CS404 - Algorithms</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Folder</label>
+                                            <select class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                                <option>Select a folder</option>
+                                                <option>Lecture Slides</option>
+                                                <option>Reading Materials</option>
+                                                <option>Assignments</option>
+                                                <option>Video Lectures</option>
+                                                <option>Code Examples</option>
+                                            </select>
+                                        </div>
+                                        <div class="md:col-span-2">
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                                            <textarea class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" rows="2" placeholder="Add a description for this material..."></textarea>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Visibility</label>
+                                            <div class="flex space-x-4">
+                                                <label class="inline-flex items-center">
+                                                    <input type="radio" name="visibility" class="text-indigo-600 focus:ring-indigo-500" checked>
+                                                    <span class="ml-2 text-sm text-gray-700">Published</span>
+                                                </label>
+                                                <label class="inline-flex items-center">
+                                                    <input type="radio" name="visibility" class="text-indigo-600 focus:ring-indigo-500">
+                                                    <span class="ml-2 text-sm text-gray-700">Draft</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 flex justify-end">
+                                        <button class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors mr-2">
+                                            Cancel
+                                        </button>
+                                        <button class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                                            Upload Files
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Recent Uploads -->
+                        <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+                            <div class="border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+                                <h3 class="text-lg font-semibold text-gray-800">Recent Uploads</h3>
+                                <div class="flex space-x-2">
+                                    <select class="text-sm border border-gray-300 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                        <option>All Courses</option>
+                                        <option>Web Development</option>
+                                        <option>Database Systems</option>
+                                        <option>Software Engineering</option>
+                                        <option>Algorithms</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="p-6">
+                                <div class="space-y-4">
+                                    <!-- File Item -->
+                                    <div class="file-card file-type-pdf bg-white p-4 rounded-lg border border-gray-200 flex items-center">
+                                        <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-file-pdf text-red-600 text-xl"></i>
+                                        </div>
+                                        <div class="ml-4 flex-1">
+                                            <div class="flex justify-between items-start">
+                                                <div>
+                                                    <h4 class="font-medium text-gray-800">Lecture 5 - Advanced CSS</h4>
+                                                    <p class="text-sm text-gray-600">CS401 - Web Development • 2.4 MB • Uploaded: Oct 18, 2023</p>
+                                                </div>
+                                                <span class="badge status-published">Published</span>
+                                            </div>
+                                        </div>
+                                        <div class="flex space-x-2">
+                                            <button class="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Download">
+                                                <i class="fas fa-download"></i>
+                                            </button>
+                                            <button class="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Share">
+                                                <i class="fas fa-share-alt"></i>
+                                            </button>
+                                            <button class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- File Item -->
+                                    <div class="file-card file-type-doc bg-white p-4 rounded-lg border border-gray-200 flex items-center">
+                                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-file-word text-blue-600 text-xl"></i>
+                                        </div>
+                                        <div class="ml-4 flex-1">
+                                            <div class="flex justify-between items-start">
+                                                <div>
+                                                    <h4 class="font-medium text-gray-800">Assignment 2 Instructions</h4>
+                                                    <p class="text-sm text-gray-600">CS402 - Database Systems • 1.2 MB • Uploaded: Oct 16, 2023</p>
+                                                </div>
+                                                <span class="badge status-published">Published</span>
+                                            </div>
+                                        </div>
+                                        <div class="flex space-x-2">
+                                            <button class="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Download">
+                                                <i class="fas fa-download"></i>
+                                            </button>
+                                            <button class="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Share">
+                                                <i class="fas fa-share-alt"></i>
+                                            </button>
+                                            <button class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- File Item -->
+                                    <div class="file-card file-type-video bg-white p-4 rounded-lg border border-gray-200 flex items-center">
+                                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-file-video text-purple-600 text-xl"></i>
+                                        </div>
+                                        <div class="ml-4 flex-1">
+                                            <div class="flex justify-between items-start">
+                                                <div>
+                                                    <h4 class="font-medium text-gray-800">SQL Joins Tutorial</h4>
+                                                    <p class="text-sm text-gray-600">CS402 - Database Systems • 48.7 MB • Uploaded: Oct 15, 2023</p>
+                                                </div>
+                                                <span class="badge status-draft">Draft</span>
+                                            </div>
+                                        </div>
+                                        <div class="flex space-x-2">
+                                            <button class="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Download">
+                                                <i class="fas fa-download"></i>
+                                            </button>
+                                            <button class="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Share">
+                                                <i class="fas fa-share-alt"></i>
+                                            </button>
+                                            <button class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- File Item -->
+                                    <div class="file-card file-type-zip bg-white p-4 rounded-lg border border-gray-200 flex items-center">
+                                        <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-file-archive text-orange-600 text-xl"></i>
+                                        </div>
+                                        <div class="ml-4 flex-1">
+                                            <div class="flex justify-between items-start">
+                                                <div>
+                                                    <h4 class="font-medium text-gray-800">Project Starter Code</h4>
+                                                    <p class="text-sm text-gray-600">CS403 - Software Engineering • 5.8 MB • Uploaded: Oct 12, 2023</p>
+                                                </div>
+                                                <span class="badge status-published">Published</span>
+                                            </div>
+                                        </div>
+                                        <div class="flex space-x-2">
+                                            <button class="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Download">
+                                                <i class="fas fa-download"></i>
+                                            </button>
+                                            <button class="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Share">
+                                                <i class="fas fa-share-alt"></i>
+                                            </button>
+                                            <button class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <button class="w-full mt-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+                                    View All Materials
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Column -->
+                    <div class="space-y-6">
+                        <!-- Quick Actions -->
+                        <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+                            <div class="border-b border-gray-200 px-6 py-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Quick Actions</h3>
+                            </div>
+                            <div class="p-6">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <a href="#" class="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors border border-gray-200">
+                                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mb-2">
+                                            <i class="fas fa-folder-plus text-blue-600"></i>
+                                        </div>
+                                        <span class="text-sm font-medium text-gray-700 text-center">Create Folder</span>
+                                    </a>
+                                    
+                                    <a href="#" class="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors border border-gray-200">
+                                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mb-2">
+                                            <i class="fas fa-link text-green-600"></i>
+                                        </div>
+                                        <span class="text-sm font-medium text-gray-700 text-center">Add Link</span>
+                                    </a>
+                                    
+                                    <a href="#" class="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors border border-gray-200">
+                                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mb-2">
+                                            <i class="fas fa-copy text-purple-600"></i>
+                                        </div>
+                                        <span class="text-sm font-medium text-gray-700 text-center">Copy Materials</span>
+                                    </a>
+                                    
+                                    <a href="#" class="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors border border-gray-200">
+                                        <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mb-2">
+                                            <i class="fas fa-bullhorn text-orange-600"></i>
+                                        </div>
+                                        <span class="text-sm font-medium text-gray-700 text-center">Announce</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Course Folders -->
+                        <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+                            <div class="border-b border-gray-200 px-6 py-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Course Folders</h3>
+                            </div>
+                            <div class="p-6">
+                                <div class="space-y-4">
+                                    <div class="folder-card bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200 cursor-pointer">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-folder text-blue-600"></i>
+                                            </div>
+                                            <div class="ml-3">
+                                                <h4 class="font-medium text-blue-800">CS401 - Web Development</h4>
+                                                <p class="text-sm text-blue-700">14 files • 32.5 MB</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="folder-card bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200 cursor-pointer">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-folder text-green-600"></i>
+                                            </div>
+                                            <div class="ml-3">
+                                                <h4 class="font-medium text-green-800">CS402 - Database Systems</h4>
+                                                <p class="text-sm text-green-700">18 files • 56.2 MB</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="folder-card bg-gradient-to-r from-purple-50 to-violet-50 p-4 rounded-lg border border-purple-200 cursor-pointer">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-folder text-purple-600"></i>
+                                            </div>
+                                            <div class="ml-3">
+                                                <h4 class="font-medium text-purple-800">CS403 - Software Engineering</h4>
+                                                <p class="text-sm text-purple-700">9 files • 12.8 MB</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="folder-card bg-gradient-to-r from-orange-50 to-amber-50 p-4 rounded-lg border border-orange-200 cursor-pointer">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-folder text-orange-600"></i>
+                                            </div>
+                                            <div class="ml-3">
+                                                <h4 class="font-medium text-orange-800">CS404 - Algorithms</h4>
+                                                <p class="text-sm text-orange-700">6 files • 8.3 MB</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <button class="w-full mt-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+                                    Manage Folders
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Storage Overview -->
+                        <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+                            <div class="border-b border-gray-200 px-6 py-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Storage Overview</h3>
+                            </div>
+                            <div class="p-6">
+                                <div class="space-y-4">
+                                    <div>
+                                        <div class="flex justify-between mb-1">
+                                            <span class="text-sm font-medium text-gray-700">Web Development</span>
+                                            <span class="text-sm font-medium text-gray-700">32.5 MB</span>
+                                        </div>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill bg-blue-600" style="width: 28%"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <div class="flex justify-between mb-1">
+                                            <span class="text-sm font-medium text-gray-700">Database Systems</span>
+                                            <span class="text-sm font-medium text-gray-700">56.2 MB</span>
+                                        </div>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill bg-green-600" style="width: 48%"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <div class="flex justify-between mb-1">
+                                            <span class="text-sm font-medium text-gray-700">Software Engineering</span>
+                                            <span class="text-sm font-medium text-gray-700">12.8 MB</span>
+                                        </div>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill bg-purple-600" style="width: 11%"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <div class="flex justify-between mb-1">
+                                            <span class="text-sm font-medium text-gray-700">Algorithms</span>
+                                            <span class="text-sm font-medium text-gray-700">8.3 MB</span>
+                                        </div>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill bg-orange-600" style="width: 7%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-4 pt-4 border-t border-gray-200">
+                                    <div class="flex justify-between">
+                                        <span class="text-sm font-medium text-gray-700">Total Used</span>
+                                        <span class="text-sm font-bold text-gray-800">2.4 GB / 5 GB</span>
+                                    </div>
+                                    <div class="progress-bar mt-2">
+                                        <div class="progress-fill bg-gradient-to-r from-indigo-500 to-purple-500" style="width: 48%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Mobile menu toggle
+        $('#menu-toggle').click(function() {
+            $('.sidebar').toggleClass('active');
+            $('.overlay').toggleClass('active');
+        });
+        
+        // Close sidebar when clicking overlay
+        $('.overlay').click(function() {
+            $('.sidebar').removeClass('active');
+            $('.overlay').removeClass('active');
+        });
+        
+        // File upload functionality
+        $('#browse-btn').click(function() {
+            $('#file-input').click();
+        });
+        
+        // Drag and drop functionality
+        const dropzone = $('#upload-dropzone');
+        
+        dropzone.on('dragover', function(e) {
+            e.preventDefault();
+            dropzone.addClass('active');
+        });
+        
+        dropzone.on('dragleave', function(e) {
+            e.preventDefault();
+            dropzone.removeClass('active');
+        });
+        
+        dropzone.on('drop', function(e) {
+            e.preventDefault();
+            dropzone.removeClass('active');
+            const files = e.originalEvent.dataTransfer.files;
+            handleFiles(files);
+        });
+        
+        $('#file-input').change(function() {
+            const files = this.files;
+            handleFiles(files);
+        });
+        
+        function handleFiles(files) {
+            if (files.length > 0) {
+                let fileList = '';
+                for (let i = 0; i < files.length; i++) {
+                    fileList += `<div class="text-sm text-gray-700">${files[i].name}</div>`;
+                }
+                
+                dropzone.html(`
+                    <i class="fas fa-check-circle text-4xl text-green-500 mb-4"></i>
+                    <h4 class="text-lg font-medium text-gray-700 mb-2">${files.length} file(s) selected</h4>
+                    ${fileList}
+                    <button class="mt-4 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors" id="change-files">
+                        Change Files
+                    </button>
+                `);
+                
+                $('#change-files').click(function() {
+                    dropzone.html(`
+                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                        <h4 class="text-lg font-medium text-gray-700 mb-2">Drag & Drop Files Here</h4>
+                        <p class="text-gray-500 mb-4">or click to browse your computer</p>
+                        <input type="file" id="file-input" class="hidden" multiple>
+                        <button class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors" id="browse-btn">
+                            Browse Files
+                        </button>
+                        <p class="text-xs text-gray-400 mt-3">Supports PDF, DOC, PPT, ZIP, MP4, and images up to 100MB each</p>
+                    `);
+                    initializeUploadFunctionality();
+                });
+            }
+        }
+        
+        function initializeUploadFunctionality() {
+            $('#browse-btn').click(function() {
+                $('#file-input').click();
+            });
+            
+            $('#file-input').change(function() {
+                const files = this.files;
+                handleFiles(files);
+            });
+        }
+        
+        // File action buttons
+        $('.file-card button').click(function(e) {
+            e.stopPropagation();
+            const action = $(this).find('i').attr('class');
+            const fileName = $(this).closest('.file-card').find('h4').text();
+            
+            if (action.includes('fa-download')) {
+                alert(`Downloading: ${fileName}`);
+            } else if (action.includes('fa-share-alt')) {
+                alert(`Sharing: ${fileName}`);
+            } else if (action.includes('fa-trash')) {
+                if (confirm(`Are you sure you want to delete "${fileName}"?`)) {
+                    $(this).closest('.file-card').fadeOut(300, function() {
+                        $(this).remove();
+                    });
+                }
+            }
+        });
+        
+        // Folder cards click
+        $('.folder-card').click(function() {
+            const folderName = $(this).find('h4').text();
+            alert(`Opening folder: ${folderName}`);
+        });
+        
+        // Quick actions
+        $('.bg-gray-50').click(function() {
+            const action = $(this).find('span').text();
+            alert(`Opening ${action}...`);
+        });
+        
+        // Initialize upload functionality
+        initializeUploadFunctionality();
+    </script>
+</body>
+</html>
